@@ -19,18 +19,24 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
-	UPROPERTY(EditDefaultsOnly, Category = Input)
-	class UInputMappingContext* IMC_Player;
 
 #pragma region Camera
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	class UCameraComponent* PlayerCamear;
 
+    UPROPERTY(VisibleAnywhere, Category = Camera)
+	class USpringArmComponent* CameraBoom;
 #pragma endregion
+
+	UPROPERTY(EditDefaultsOnly, Category = Input)
+	class UInputMappingContext* IMC_Player;
 
 #pragma region Move
 	UPROPERTY(EditDefaultsOnly, Category = Input)
 	class UInputAction* IA_Move;
+
+	UPROPERTY(EditDefaultsOnly, Category = Input)
+	class UInputAction* IA_Turn;
 
 	UPROPERTY(EditDefaultsOnly, Category = Input)
 	float SpeedMove;
@@ -39,6 +45,8 @@ private:
 	float SpeedRun;
 
 	void Move(const struct FInputActionValue& InValue);
+
+	void Turn(const struct FInputActionValue& InValue);
 #pragma endregion
 
 };
