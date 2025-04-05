@@ -46,10 +46,10 @@ private:
 	class UInputAction* IA_Run;
 
 	UPROPERTY(EditDefaultsOnly, Category = Input)
-	float SpeedJog;
+	float SpeedJog = 600.f;
 	
 	UPROPERTY(EditDefaultsOnly, Category = Input)
-	float SpeedRun;
+	float SpeedRun = 900.f;
 
 	void PlayerMove(const struct FInputActionValue& InValue);
 
@@ -57,7 +57,7 @@ private:
 
 	void PlayerJump(const struct FInputActionValue& InValue);
 
-	void PlayerRun(const struct FInputAcitonValue& InValue);
+	void PlayerRun(const struct FInputActionValue& InValue);
 
 #pragma endregion
 
@@ -68,6 +68,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = Input)
 	float DistanceDash = 200.f;
 
-	void PlayerDash(const struct FInputAcitonValue& InValue);
+	void PlayerDash(const struct FInputActionValue& InValue);
 #pragma endregion
 };

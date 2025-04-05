@@ -40,7 +40,7 @@ ACPlayer::ACPlayer()
 	ConstructorHelpers::FObjectFinder<UInputMappingContext> tmpIMC ( TEXT("/Script/EnhancedInput.InputMappingContext'/Game/DYL/Inputs/IMC_Player.IMC_Player'"));
 	if( tmpIMC.Succeeded() ) IMC_Player = tmpIMC.Object;
 
-	/* IA*/
+	/* IA */
 	ConstructorHelpers::FObjectFinder<UInputAction> tmpIAMove ( TEXT("/Script/EnhancedInput.InputAction'/Game/DYL/Inputs/IA_Move.IA_Move'") );
 	if( tmpIAMove.Succeeded() ) IA_Move = tmpIAMove.Object;
 
@@ -114,16 +114,16 @@ void ACPlayer::PlayerJump(const FInputActionValue& InValue)
 	Jump();
 }
 
-void ACPlayer::PlayerRun(const FInputAcitonValue& InValue)
+void ACPlayer::PlayerRun(const FInputActionValue& InValue)
 {
-	if (GetCharacterMovement()->MaxWalkSpeed >= SpeedJog)
-		GetCharacterMovement()->MaxWalkSpeed = SpeedRun;
-	else
+	if (GetCharacterMovement()->MaxWalkSpeed > SpeedJog)
 		GetCharacterMovement()->MaxWalkSpeed = SpeedJog;
+	else
+		GetCharacterMovement()->MaxWalkSpeed = SpeedRun;
 }
 
-void ACPlayer::PlayerDash(const FInputAcitonValue& InValue)
+void ACPlayer::PlayerDash(const FInputActionValue& InValue)
 {
-	
+    UE_LOG(LogTemp, Warning, TEXT(">>> Dash"));
 }
 
