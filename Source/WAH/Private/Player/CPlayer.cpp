@@ -18,6 +18,10 @@ ACPlayer::ACPlayer()
 	/* Character Movement */
 	GetCharacterMovement()->bOrientRotationToMovement = false; 
 	//GetCharacterMovement()->bUseControllerDesiredRotation = true;
+	GetCharacterMovement()->MaxWalkSpeed = SpeedJog;
+
+	/* Jump */
+	JumpMaxCount = 2;
 
 	/* Camera Boom */
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>( TEXT("CameraBoom") );
@@ -43,6 +47,14 @@ ACPlayer::ACPlayer()
 	ConstructorHelpers::FObjectFinder<UInputAction> tmpIATurn ( TEXT("/Script/EnhancedInput.InputAction'/Game/DYL/Inputs/IA_Turn.IA_Turn'") );
 	if( tmpIATurn.Succeeded() ) IA_Turn = tmpIATurn.Object;
 
+	ConstructorHelpers::FObjectFinder<UInputAction> tmpIAJump(TEXT("/Script/EnhancedInput.InputAction'/Game/DYL/Inputs/IA_Jump.IA_Jump'"));
+	if (tmpIATurn.Succeeded()) IA_Jump = tmpIAJump.Object;
+
+	ConstructorHelpers::FObjectFinder<UInputAction> tmpIARun(TEXT("/Script/EnhancedInput.InputAction'/Game/DYL/Inputs/IA_Run.IA_Run'"));
+	if (tmpIARun.Succeeded()) IA_Run = tmpIARun.Object;
+
+	ConstructorHelpers::FObjectFinder<UInputAction> tmpIADash(TEXT("/Script/EnhancedInput.InputAction'/Game/DYL/Inputs/IA_Dash.IA_Dash'"));
+	if (tmpIADash.Succeeded()) IA_Dash = tmpIADash.Object;
 }
 
 void ACPlayer::BeginPlay()
@@ -74,23 +86,44 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	auto inputSystem = Cast<UEnhancedInputComponent>( PlayerInputComponent );
 	if (inputSystem)
 	{
-		inputSystem->BindAction(IA_Move, ETriggerEvent::Triggered, this, &ACPlayer::Move);
-		inputSystem->BindAction(IA_Turn, ETriggerEvent::Triggered, this, &ACPlayer::Turn);
+		inputSystem->BindAction(IA_Move, ETriggerEvent::Triggered, this, &ACPlayer::PlayerMove);
+		inputSystem->BindAction(IA_Turn, ETriggerEvent::Triggered, this, &ACPlayer::PlayerTurn);
+		inputSystem->BindAction(IA_Jump, ETriggerEvent::Started, this, &ACPlayer::PlayerJump);
+		inputSystem->BindAction(IA_Run, ETriggerEvent::Started, this, &ACPlayer::PlayerRun);
+		inputSystem->BindAction(IA_Dash, ETriggerEvent::Started, this, &ACPlayer::PlayerDash);
 	}
 }
 
-void ACPlayer::Move(const struct FInputActionValue& InValue)
+void ACPlayer::PlayerMove(const struct FInputActionValue& InValue)
 {
 	FVector2D scale = InValue.Get<FVector2D>();
 
 	AddMovementInput(PlayerCamear->GetForwardVector() * scale.X + PlayerCamear->GetRightVector() * scale.Y);
 }
 
-void ACPlayer::Turn(const FInputActionValue& InValue)
+void ACPlayer::PlayerTurn(const FInputActionValue& InValue)
 {
 	FVector2d scale = InValue.Get<FVector2d>();
 
 	AddControllerPitchInput(scale.Y);
 	AddControllerYawInput(scale.X);
+}
+
+void ACPlayer::PlayerJump(const FInputActionValue& InValue)
+{
+	Jump();
+}
+
+void ACPlayer::PlayerRun(const FInputAcitonValue& InValue)
+{
+	if (GetCharacterMovement()->MaxWalkSpeed >= SpeedJog)
+		GetCharacterMovement()->MaxWalkSpeed = SpeedRun;
+	else
+		GetCharacterMovement()->MaxWalkSpeed = SpeedJog;
+}
+
+void ACPlayer::PlayerDash(const FInputAcitonValue& InValue)
+{
+	
 }
 
