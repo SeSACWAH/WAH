@@ -5,6 +5,7 @@
 #include "EnhancedInputComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
 
 ACPlayer::ACPlayer()
 {
@@ -86,22 +87,22 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	auto inputSystem = Cast<UEnhancedInputComponent>( PlayerInputComponent );
 	if (inputSystem)
 	{
-		inputSystem->BindAction(IA_Move, ETriggerEvent::Triggered, this, &ACPlayer::PlayerMove);
-		inputSystem->BindAction(IA_Turn, ETriggerEvent::Triggered, this, &ACPlayer::PlayerTurn);
-		inputSystem->BindAction(IA_Jump, ETriggerEvent::Started, this, &ACPlayer::PlayerJump);
-		inputSystem->BindAction(IA_Run, ETriggerEvent::Started, this, &ACPlayer::PlayerRun);
-		inputSystem->BindAction(IA_Dash, ETriggerEvent::Started, this, &ACPlayer::PlayerDash);
+		inputSystem->BindAction(IA_Move, ETriggerEvent::Triggered, this, &ACPlayer::DoMove);
+		inputSystem->BindAction(IA_Turn, ETriggerEvent::Triggered, this, &ACPlayer::DoTurn);
+		inputSystem->BindAction(IA_Jump, ETriggerEvent::Started, this, &ACPlayer::DoJump);
+		inputSystem->BindAction(IA_Run, ETriggerEvent::Started, this, &ACPlayer::DoRun);
+		inputSystem->BindAction(IA_Dash, ETriggerEvent::Started, this, &ACPlayer::DoDash);
 	}
 }
 
-void ACPlayer::PlayerMove(const struct FInputActionValue& InValue)
+void ACPlayer::DoMove(const struct FInputActionValue& InValue)
 {
 	FVector2D scale = InValue.Get<FVector2D>();
 
 	AddMovementInput(PlayerCamear->GetForwardVector() * scale.X + PlayerCamear->GetRightVector() * scale.Y);
 }
 
-void ACPlayer::PlayerTurn(const FInputActionValue& InValue)
+void ACPlayer::DoTurn(const FInputActionValue& InValue)
 {
 	FVector2d scale = InValue.Get<FVector2d>();
 
@@ -109,12 +110,12 @@ void ACPlayer::PlayerTurn(const FInputActionValue& InValue)
 	AddControllerYawInput(scale.X);
 }
 
-void ACPlayer::PlayerJump(const FInputActionValue& InValue)
+void ACPlayer::DoJump(const FInputActionValue& InValue)
 {
 	Jump();
 }
 
-void ACPlayer::PlayerRun(const FInputActionValue& InValue)
+void ACPlayer::DoRun(const FInputActionValue& InValue)
 {
 	if (GetCharacterMovement()->MaxWalkSpeed > SpeedJog)
 		GetCharacterMovement()->MaxWalkSpeed = SpeedJog;
@@ -122,8 +123,79 @@ void ACPlayer::PlayerRun(const FInputActionValue& InValue)
 		GetCharacterMovement()->MaxWalkSpeed = SpeedRun;
 }
 
-void ACPlayer::PlayerDash(const FInputActionValue& InValue)
+void ACPlayer::DoDash(const FInputActionValue& InValue)
 {
-    UE_LOG(LogTemp, Warning, TEXT(">>> Dash"));
+	DashDestination = GetActorLocation() + DashDistance;
+	StartDash();
+}
+
+void ACPlayer::StartDash()
+{
+	// 이미 Dash 중이거나 Dash cool down 중이라면 아무 처리하지 않는다
+	if( bIsDashing || bIsDashCoolDown ) return;
+
+	// Dash가 시작되었음을 명시한다
+	bIsDashing = true;
+    UE_LOG(LogTemp, Log, TEXT(">>> Dash Start : %d"), bIsDashing);
+
+	CurrentTime = 0.f;
+
+	// Dash 동안에는 무적 상태
+	GetCapsuleComponent()->SetCollisionProfileName(TEXT("NoCollision"));
+
+	// Dash Lambda 
+	auto lambda = [this]()
+		{
+			FVector currentPos = GetActorLocation();
+			FVector targetPos = DashDestination;
+
+			// 현재 위치에서 DashDistance만큼 이동
+			currentPos = FMath::Lerp(currentPos, targetPos, 10 * GetWorld()->DeltaTimeSeconds);
+			SetActorLocation(currentPos);
+			UE_LOG(LogTemp, Log, TEXT(">>> Dash ing - distance : %f"), FVector::Distance(currentPos, targetPos));
+
+			// 목적지로부터 일정 범위 안에 도달했다면
+			if (FVector::Distance(currentPos, targetPos) < 10)
+			{
+				// 위치 보정
+				SetActorLocation( targetPos );
+				CompleteDash();
+			}
+		};
+
+	// DashDurationTime 동안 Dash로 이동
+	GetWorldTimerManager().SetTimer(DashTimer, lambda, DashDurationTime, true);	// true 인지 false 인지 헷갈림
+}
+
+void ACPlayer::CompleteDash()
+{
+	UE_LOG(LogTemp, Log, TEXT(">>> Dash Complete"));
+	// Dash 타이머 종료
+	GetWorldTimerManager().ClearTimer(DashTimer);
+
+	// 충돌체 활성화
+	GetCapsuleComponent()->SetCollisionProfileName(TEXT("Player"));
+
+	// Dash가 끝났음을 명시
+	bIsDashing = false;
+
+	// Dash CoolDown이 시작되었음을 명시
+	bIsDashCoolDown = true;
+	UE_LOG(LogTemp, Log, TEXT(">>> Dash Cool Down Start"));
+
+	// Dash Cooldown 람다
+	auto lambda = [this]()
+		{
+			// Cool down이 끝났음을 명시
+			bIsDashCoolDown = false;
+
+			// Dash Cool Down Timer 초기화
+			GetWorldTimerManager().ClearTimer(DashCoolDownTimer);
+
+			UE_LOG(LogTemp, Log, TEXT(">>> Dash Cool Down Complete"));
+		};
+
+	// DashCoolDownTime 동안 Cool Down 실행
+	GetWorldTimerManager().SetTimer(DashCoolDownTimer, lambda, DashDurationTime, true);	// true 인지 false 인지 헷갈림
 }
 

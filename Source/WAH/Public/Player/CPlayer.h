@@ -45,19 +45,19 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = Input)
 	class UInputAction* IA_Run;
 
-	UPROPERTY(EditDefaultsOnly, Category = Input)
+	UPROPERTY(EditDefaultsOnly, Category = Move)
 	float SpeedJog = 600.f;
 	
-	UPROPERTY(EditDefaultsOnly, Category = Input)
+	UPROPERTY(EditDefaultsOnly, Category = Move)
 	float SpeedRun = 900.f;
 
-	void PlayerMove(const struct FInputActionValue& InValue);
+	void DoMove(const struct FInputActionValue& InValue);
 
-	void PlayerTurn(const struct FInputActionValue& InValue);
+	void DoTurn(const struct FInputActionValue& InValue);
 
-	void PlayerJump(const struct FInputActionValue& InValue);
+	void DoJump(const struct FInputActionValue& InValue);
 
-	void PlayerRun(const struct FInputActionValue& InValue);
+	void DoRun(const struct FInputActionValue& InValue);
 
 #pragma endregion
 
@@ -65,9 +65,29 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = Input)
 	class UInputAction* IA_Dash;
 
-	UPROPERTY(EditDefaultsOnly, Category = Input)
-	float DistanceDash = 200.f;
+	bool bIsDashing = false;
+	bool bIsDashCoolDown = false;
 
-	void PlayerDash(const struct FInputActionValue& InValue);
+	FVector DashDestination;
+
+	UPROPERTY(EditDefaultsOnly, Category = Dash)
+	float DashDistance = 200.f;
+
+	float CurrentTime = 0.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = Input)
+	float DashDurationTime = 0.2f;
+
+	UPROPERTY(EditDefaultsOnly, Category = Input)
+	float DashCoolDownTime = 1.f;
+
+	FTimerHandle DashTimer;
+	FTimerHandle DashCoolDownTimer;
+
+	void DoDash(const struct FInputActionValue& InValue);
+
+	void StartDash();
+
+	void CompleteDash();
 #pragma endregion
 };
