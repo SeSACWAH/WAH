@@ -66,6 +66,8 @@ void ACPlayer::BeginPlay()
 void ACPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (bCanCoolDownDash) CoolDownDash(DeltaTime);
 }
 
 void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -89,7 +91,7 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		inputSystem->BindAction(IA_Turn, ETriggerEvent::Triggered, this, &ACPlayer::DoTurn);
 		inputSystem->BindAction(IA_Jump, ETriggerEvent::Started, this, &ACPlayer::DoJump);
 		inputSystem->BindAction(IA_Run, ETriggerEvent::Started, this, &ACPlayer::DoRun);
-		inputSystem->BindAction(IA_Dash, ETriggerEvent::Started, this, &ACPlayer::StartDash);
+		inputSystem->BindAction(IA_Dash, ETriggerEvent::Started, this, &ACPlayer::DoDash);
 	}
 }
 
@@ -128,25 +130,23 @@ void ACPlayer::DoRun(const FInputActionValue& InValue)
 		GetCharacterMovement()->MaxWalkSpeed = SpeedRun;
 }
 
-void ACPlayer::StartDash(const FInputActionValue& InValue)
+void ACPlayer::DoDash(const FInputActionValue& InValue)
 {
 	// 이미 Dash 중이거나 Dash cool down 중이라면 아무 처리하지 않는다
-	if (bCanDash || bIsDashCoolDown) return;
+	if (bCanDash || bCanCoolDownDash) return;
 
 	DashDestination = GetActorLocation() + GetActorForwardVector() * DashDistance;
 
 	// Dash가 시작되었음을 명시한다
 	bCanDash = true;
-	DoDash();
-}
 
-void ACPlayer::DoDash()
-{
 	UE_LOG(LogTemp, Warning, TEXT(">>>> Dash"));
 
 	// Dash Lambda 
 	auto lambda = [this]()
 		{
+			if(!bCanDash) GetWorldTimerManager().ClearTimer(DashTimer);
+
 			FVector currentPos = GetActorLocation();
 			FVector targetPos = DashDestination;
 
@@ -168,8 +168,6 @@ void ACPlayer::DoDash()
 	GetWorldTimerManager().SetTimer(DashTimer, lambda, DashDurationTime, true);
 }
 
-
-
 void ACPlayer::CompleteDash()
 {
 	UE_LOG(LogTemp, Log, TEXT(">>> Dash Complete"));
@@ -179,23 +177,26 @@ void ACPlayer::CompleteDash()
 	// Dash가 끝났음을 명시
 	bCanDash = false;
 
+	DashCurrentTime = 0;
+
 	// Dash CoolDown이 시작되었음을 명시
-	bIsDashCoolDown = true;
+	bCanCoolDownDash = true;
 	UE_LOG(LogTemp, Log, TEXT(">>> Dash Cool Down Start"));
+}
 
-	// Dash Cooldown 람다
-	auto lambda = [this]()
-		{
-			// Cool down이 끝났음을 명시
-			bIsDashCoolDown = false;
+void ACPlayer::CoolDownDash(float InDeltaTime)
+{
+	DashCurrentTime += InDeltaTime;
 
-			// Dash Cool Down Timer 초기화
-			GetWorldTimerManager().ClearTimer(DashCoolDownTimer);
+	if (DashCurrentTime >= DashCoolDownTime)
+	{
+		// Cool down이 끝났음을 명시
+		bCanCoolDownDash = false;
 
-			UE_LOG(LogTemp, Log, TEXT(">>> Dash Cool Down Complete"));
-		};
+		// Dash Cool Down Timer 초기화
+		GetWorldTimerManager().ClearTimer(DashCoolDownTimer);
 
-	// DashCoolDownTime 동안 Cool Down 실행
-	GetWorldTimerManager().SetTimer(DashCoolDownTimer, lambda, DashDurationTime, false);
+		UE_LOG(LogTemp, Log, TEXT(">>> Dash Cool Down Complete"));
+	}
 }
 
