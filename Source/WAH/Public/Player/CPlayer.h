@@ -65,18 +65,18 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = Input)
 	class UInputAction* IA_Dash;
 
-	bool bIsDashing = false;
+	bool bCanDash = false;
 	bool bIsDashCoolDown = false;
 
 	FVector DashDestination;
 
 	UPROPERTY(EditDefaultsOnly, Category = Dash)
-	float DashDistance = 200.f;
+	float DashDistance = 500.f;
 
 	float CurrentTime = 0.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Input)
-	float DashDurationTime = 0.2f;
+	float DashDurationTime = 0.02f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Input)
 	float DashCoolDownTime = 1.f;
@@ -84,10 +84,8 @@ private:
 	FTimerHandle DashTimer;
 	FTimerHandle DashCoolDownTimer;
 
-	void DoDash(const struct FInputActionValue& InValue);
-
-	void StartDash();
-
+	void StartDash(const struct FInputActionValue& InValue);
+	void DoDash();
 	void CompleteDash();
 #pragma endregion
 };

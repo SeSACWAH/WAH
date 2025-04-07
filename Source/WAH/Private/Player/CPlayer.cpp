@@ -17,8 +17,8 @@ ACPlayer::ACPlayer()
 	bUseControllerRotationRoll = false;
 
 	/* Character Movement */
-	GetCharacterMovement()->bOrientRotationToMovement = false; 
-	//GetCharacterMovement()->bUseControllerDesiredRotation = true;
+	GetCharacterMovement()->bOrientRotationToMovement = true; 
+	GetCharacterMovement()->bUseControllerDesiredRotation = false;
 	GetCharacterMovement()->MaxWalkSpeed = SpeedJog;
 
 	/* Jump */
@@ -27,14 +27,13 @@ ACPlayer::ACPlayer()
 	/* Camera Boom */
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>( TEXT("CameraBoom") );
 	CameraBoom->SetupAttachment( RootComponent );
-	CameraBoom->TargetArmLength = 200.f;
+	CameraBoom->TargetArmLength = 400.f;
 	CameraBoom->bUsePawnControlRotation = true;
-	CameraBoom->SetRelativeLocation( FVector(0, 50, 70) );
-	CameraBoom->SetRelativeRotation( FRotator(-10, 0, 0) );
+	CameraBoom->SetRelativeLocation( FVector(0, 0, 20) );
 
 	/* Camera */
 	PlayerCamear = CreateDefaultSubobject<UCameraComponent>( TEXT("PlayerCamera") );
-	PlayerCamear->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+	PlayerCamear->SetupAttachment(CameraBoom/*, USpringArmComponent::SocketName*/);
 	PlayerCamear->bUsePawnControlRotation = false;
 
 	/* IMC */
@@ -67,7 +66,6 @@ void ACPlayer::BeginPlay()
 void ACPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -91,12 +89,14 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		inputSystem->BindAction(IA_Turn, ETriggerEvent::Triggered, this, &ACPlayer::DoTurn);
 		inputSystem->BindAction(IA_Jump, ETriggerEvent::Started, this, &ACPlayer::DoJump);
 		inputSystem->BindAction(IA_Run, ETriggerEvent::Started, this, &ACPlayer::DoRun);
-		inputSystem->BindAction(IA_Dash, ETriggerEvent::Started, this, &ACPlayer::DoDash);
+		inputSystem->BindAction(IA_Dash, ETriggerEvent::Started, this, &ACPlayer::StartDash);
 	}
 }
 
 void ACPlayer::DoMove(const struct FInputActionValue& InValue)
 {
+	if( bCanDash ) return;
+
 	FVector2D scale = InValue.Get<FVector2D>();
 
 	AddMovementInput(PlayerCamear->GetForwardVector() * scale.X + PlayerCamear->GetRightVector() * scale.Y);
@@ -106,8 +106,13 @@ void ACPlayer::DoTurn(const FInputActionValue& InValue)
 {
 	FVector2d scale = InValue.Get<FVector2d>();
 
-	AddControllerPitchInput(scale.Y);
-	AddControllerYawInput(scale.X);
+	// 회전 제한
+	float pitch = FMath::Clamp(GetActorRotation().Pitch + scale.Y, -30.f, 90.f);
+	//float yaw = FMath::Clamp(GetActorRotation().Yaw + scale.X, -45.f, 45.f);
+
+	//GetController()->SetControlRotation( FRotator(scale.Y, scale.X, GetController()->GetControlRotation().Roll) );
+	AddControllerPitchInput( pitch );
+	AddControllerYawInput( scale.X );
 }
 
 void ACPlayer::DoJump(const FInputActionValue& InValue)
@@ -123,25 +128,21 @@ void ACPlayer::DoRun(const FInputActionValue& InValue)
 		GetCharacterMovement()->MaxWalkSpeed = SpeedRun;
 }
 
-void ACPlayer::DoDash(const FInputActionValue& InValue)
-{
-	DashDestination = GetActorLocation() + DashDistance;
-	StartDash();
-}
-
-void ACPlayer::StartDash()
+void ACPlayer::StartDash(const FInputActionValue& InValue)
 {
 	// 이미 Dash 중이거나 Dash cool down 중이라면 아무 처리하지 않는다
-	if( bIsDashing || bIsDashCoolDown ) return;
+	if (bCanDash || bIsDashCoolDown) return;
+
+	DashDestination = GetActorLocation() + GetActorForwardVector() * DashDistance;
 
 	// Dash가 시작되었음을 명시한다
-	bIsDashing = true;
-    UE_LOG(LogTemp, Log, TEXT(">>> Dash Start : %d"), bIsDashing);
+	bCanDash = true;
+	DoDash();
+}
 
-	CurrentTime = 0.f;
-
-	// Dash 동안에는 무적 상태
-	GetCapsuleComponent()->SetCollisionProfileName(TEXT("NoCollision"));
+void ACPlayer::DoDash()
+{
+	UE_LOG(LogTemp, Warning, TEXT(">>>> Dash"));
 
 	// Dash Lambda 
 	auto lambda = [this]()
@@ -152,20 +153,22 @@ void ACPlayer::StartDash()
 			// 현재 위치에서 DashDistance만큼 이동
 			currentPos = FMath::Lerp(currentPos, targetPos, 10 * GetWorld()->DeltaTimeSeconds);
 			SetActorLocation(currentPos);
-			UE_LOG(LogTemp, Log, TEXT(">>> Dash ing - distance : %f"), FVector::Distance(currentPos, targetPos));
+			//UE_LOG(LogTemp, Log, TEXT(">>> Dash ing - distance : %f"), FVector::Distance(currentPos, targetPos));
 
 			// 목적지로부터 일정 범위 안에 도달했다면
 			if (FVector::Distance(currentPos, targetPos) < 10)
 			{
 				// 위치 보정
-				SetActorLocation( targetPos );
+				SetActorLocation(targetPos);
 				CompleteDash();
 			}
 		};
 
 	// DashDurationTime 동안 Dash로 이동
-	GetWorldTimerManager().SetTimer(DashTimer, lambda, DashDurationTime, true);	// true 인지 false 인지 헷갈림
+	GetWorldTimerManager().SetTimer(DashTimer, lambda, DashDurationTime, true);
 }
+
+
 
 void ACPlayer::CompleteDash()
 {
@@ -173,11 +176,8 @@ void ACPlayer::CompleteDash()
 	// Dash 타이머 종료
 	GetWorldTimerManager().ClearTimer(DashTimer);
 
-	// 충돌체 활성화
-	GetCapsuleComponent()->SetCollisionProfileName(TEXT("Player"));
-
 	// Dash가 끝났음을 명시
-	bIsDashing = false;
+	bCanDash = false;
 
 	// Dash CoolDown이 시작되었음을 명시
 	bIsDashCoolDown = true;
@@ -196,6 +196,6 @@ void ACPlayer::CompleteDash()
 		};
 
 	// DashCoolDownTime 동안 Cool Down 실행
-	GetWorldTimerManager().SetTimer(DashCoolDownTimer, lambda, DashDurationTime, true);	// true 인지 false 인지 헷갈림
+	GetWorldTimerManager().SetTimer(DashCoolDownTimer, lambda, DashDurationTime, false);
 }
 
