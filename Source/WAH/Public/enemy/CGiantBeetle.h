@@ -4,16 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "CShildBee.generated.h"
+#include "CGiantBeetle.generated.h"
 
 UCLASS()
-class WAH_API ACShildBee : public AActor
+class WAH_API ACGiantBeetle : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	ACShildBee();
+	ACGiantBeetle();
 
 protected:
 	// Called when the game starts or when spawned
@@ -23,4 +23,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = FSMComponent)
+	class UCGiantBeetleFSM* fsm;
+
+	
 };
