@@ -8,84 +8,90 @@
 UCLASS()
 class WAH_API ACPlayer : public ACharacter
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	ACPlayer();
+    ACPlayer();
 
 protected:
-	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaTime) override;
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+    virtual void BeginPlay() override;
+    virtual void Tick(float DeltaTime) override;
+    virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
 #pragma region Camera
-	UPROPERTY(VisibleAnywhere, Category = Camera)
-	class UCameraComponent* PlayerCamear;
+    UPROPERTY(VisibleAnywhere, Category = Camera)
+    class UCameraComponent* PlayerCamear;
 
     UPROPERTY(VisibleAnywhere, Category = Camera)
-	class USpringArmComponent* CameraBoom;
+    class USpringArmComponent* CameraBoom;
 #pragma endregion
 
 #pragma region IMC
-	UPROPERTY(EditDefaultsOnly, Category = Input)
-	class UInputMappingContext* IMC_Player;
+    UPROPERTY(EditDefaultsOnly, Category = Input)
+    class UInputMappingContext* IMC_Player;
 #pragma endregion
 
 #pragma region Move
-	UPROPERTY(EditDefaultsOnly, Category = Input)
-	class UInputAction* IA_Move;
+    UPROPERTY(EditDefaultsOnly, Category = Input)
+    class UInputAction* IA_Move;
 
-	UPROPERTY(EditDefaultsOnly, Category = Input)
-	class UInputAction* IA_Turn;
+    UPROPERTY(EditDefaultsOnly, Category = Input)
+    class UInputAction* IA_Turn;
 
-	UPROPERTY(EditDefaultsOnly, Category = Input)
-	class UInputAction* IA_Jump;
+    UPROPERTY(EditDefaultsOnly, Category = Input)
+    class UInputAction* IA_Jump;
 
-	UPROPERTY(EditDefaultsOnly, Category = Input)
-	class UInputAction* IA_Run;
+    UPROPERTY(EditDefaultsOnly, Category = Input)
+    class UInputAction* IA_Run;
 
-	UPROPERTY(EditDefaultsOnly, Category = Move)
-	float SpeedJog = 600.f;
-	
-	UPROPERTY(EditDefaultsOnly, Category = Move)
-	float SpeedRun = 900.f;
+    // Turn
+    UPROPERTY(EditDefaultsOnly)
+    float MinPitch = -90.f;
 
-	void DoMove(const struct FInputActionValue& InValue);
+    UPROPERTY(EditDefaultsOnly)
+    float MaxPitch = 30;
 
-	void DoTurn(const struct FInputActionValue& InValue);
+    UPROPERTY(EditDefaultsOnly, Category = Move)
+    float SpeedJog = 600.f;
 
-	void DoJump(const struct FInputActionValue& InValue);
+    UPROPERTY(EditDefaultsOnly, Category = Move)
+    float SpeedRun = 900.f;
 
-	void DoRun(const struct FInputActionValue& InValue);
+    void DoMove(const struct FInputActionValue& InValue);
+
+    void DoTurn(const struct FInputActionValue& InValue);
+
+    void DoJump(const struct FInputActionValue& InValue);
+
+    void DoRun(const struct FInputActionValue& InValue);
 
 #pragma endregion
 
 #pragma region Dash
-	UPROPERTY(EditDefaultsOnly, Category = Input)
-	class UInputAction* IA_Dash;
+    UPROPERTY(EditDefaultsOnly, Category = Input)
+    class UInputAction* IA_Dash;
 
-	bool bCanDash = false;
-	bool bCanCoolDownDash = false;
+    bool bCanDash = false;
+    bool bCanResetDash = false;
 
-	FVector DashDestination;
+    FVector DashStartPos;
+    FVector DashEndPos;
 
-	UPROPERTY(EditDefaultsOnly, Category = Dash)
-	float DashDistance = 500.f;
+    UPROPERTY(EditDefaultsOnly, Category = Dash)
+    float DashDistance = 300.f;
 
-	float DashCurrentTime = 0.f;
+    float DashCurrentTime = 0.f;
 
-	UPROPERTY(EditDefaultsOnly, Category = Input)
-	float DashDurationTime = 0.02f;
+    UPROPERTY(EditDefaultsOnly, Category = Input)
+    float DashDurationTime = 0.2f;
 
-	UPROPERTY(EditDefaultsOnly, Category = Input)
-	float DashCoolDownTime = 3.f;
+    UPROPERTY(EditDefaultsOnly, Category = Input)
+    float DashCoolDownTime = 1.f;
 
-	FTimerHandle DashTimer;
-	FTimerHandle DashCoolDownTimer;
-
-	void DoDash(const FInputActionValue& InValue);
-	void CompleteDash();
-	void CoolDownDash(float InDeltaTime);
+    void StartDash(const FInputActionValue& InValue);
+    void DoDash(float InDeltaTime);
+    void ResetDash(float InDeltaTime);
 #pragma endregion
+
 };
