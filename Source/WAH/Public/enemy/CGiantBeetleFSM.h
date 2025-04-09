@@ -39,6 +39,51 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = FSM)
 	EBeetleState mState = EBeetleState::Idle;
 
+	UPROPERTY(VisibleAnywhere, Category = FSM)
+	class ACPlayer* Target;
+	UPROPERTY(VisibleAnywhere, Category = FSM)
+	class ACPlayer* Player1;
+	UPROPERTY(VisibleAnywhere, Category = FSM)
+	class ACPlayer* Player2;
+	UPROPERTY(VisibleAnywhere, Category = FSM)
+	class ACGiantBeetle* Me;
+
+	UPROPERTY(EditDefaultsOnly, Category = FSM)
+	float IdleDelayTime = 1.0f;
+
+	float CurIdleTime = 0.0f;
+
+	UPROPERTY(EditAnywhere, Category = FSM)
+	float RotTime = 1.0f;
+
+	float CurRotTime = 0.0f;
+
+	UPROPERTY(EditAnywhere, Category = FSM)
+	float ChargeTime = 3.0f;
+
+	float CurChargeTime = 0.0f;
+
+	UPROPERTY(EditAnywhere, Category = FSM)
+	float TJTime = 1.0f;
+
+	float CurTJTime = 0.0f;
+
+
+	UPROPERTY(EditDefaultsOnly, Category = FSM)
+	int32 MaxChargeCnt = 2;
+
+	int32 ChargeCnt = 0;
+
+	int32 TripleCnt = 0;
+
+	bool bWasTriple = true;
+
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class ACShockwave> ShockwaveFac;
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class ACHollowCylinder> ShockCylFac;
+	
 	void IdleState();
 	void RetargetState();
 	void ChargeState();
@@ -49,8 +94,5 @@ public:
 
 	void Stomp();
 
-	UPROPERTY(EditDefaultsOnly, Category = FSM)
-	float IdleDelayTime = 1.0f;
-
-	float curTime = 0.0f;
+	
 };

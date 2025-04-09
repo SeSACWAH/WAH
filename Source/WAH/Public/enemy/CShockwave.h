@@ -3,17 +3,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Pawn.h"
-#include "CGiantBeetle.generated.h"
+#include "GameFramework/Actor.h"
+#include "CShockwave.generated.h"
 
 UCLASS()
-class WAH_API ACGiantBeetle : public APawn
+class WAH_API ACShockwave : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	ACGiantBeetle();
+	ACShockwave();
 
 protected:
 	// Called when the game starts or when spawned
@@ -23,11 +23,13 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = FSMComponent)
-	class UCGiantBeetleFSM* fsm;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	class UStaticMeshComponent* RingComp;
 
-	float MaxHP = 100;
-	float CurHP = MaxHP;
+	FTimerHandle ExpandTimer;
 
-	bool bKill = false;
+	float CurTime = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float ExpandTime = 5.0f;
 };

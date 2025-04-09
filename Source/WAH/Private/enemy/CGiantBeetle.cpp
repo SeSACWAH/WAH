@@ -2,6 +2,7 @@
 
 
 #include "enemy/CGiantBeetle.h"
+#include "enemy/CGiantBeetleFSM.h"
 
 // Sets default values
 ACGiantBeetle::ACGiantBeetle()
@@ -9,6 +10,8 @@ ACGiantBeetle::ACGiantBeetle()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	fsm = CreateDefaultSubobject<UCGiantBeetleFSM>(TEXT("FSM"));
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
 // Called when the game starts or when spawned
