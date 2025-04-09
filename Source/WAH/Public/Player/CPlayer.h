@@ -37,6 +37,8 @@ private:
 
     UPROPERTY(EditDefaultsOnly, Category = Camera)
     float ArmLengthDefault = 400.f;
+
+    FVector CameraBoomLocationDefault = {0, 0, 140};
 #pragma endregion
 
 #pragma region IMC
@@ -58,12 +60,16 @@ private:
     class UInputAction* IA_Run;
 
     // Turn
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditDefaultsOnly, Category = Move)
     float MinPitch = -78.f;
 
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditDefaultsOnly, Category = Move)
     float MaxPitch = 50;
 
+    UPROPERTY(EditDefaultsOnly, Category = Move)
+    float MouseSensitivityDefault = 0.85;
+
+    // Speed
     UPROPERTY(EditDefaultsOnly, Category = Move)
     float SpeedJog = 600.f;
 
@@ -130,8 +136,11 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = Input)
     class UInputAction* IA_Aim;
 
+    // CameraBoom
     UPROPERTY(EditDefaultsOnly, Category = Camera)
-    float ArmLengthAim = 200.f;
+    float ArmLengthAim = 300.f;
+
+    FVector CameraBoomLocationZoomIn = { 100, 100, 110 };
 
     // Time
     UPROPERTY(EditDefaultsOnly, Category = Aim)
@@ -143,12 +152,14 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = Aim)
     float AimZoomOutTime = 0.3f;
 
-
-    // Aim input이 들어왔는지 체크
-    //bool bCanAim = false;
-
+    // Mouse Sensitivity
+     UPROPERTY(EditDefaultsOnly, Category = Aim)
+    float MouseSensitivityAim = MouseSensitivityDefault * 0.2f;
+    
+    bool bCanAim = false;   // Aim input이 들어왔는지 체크
     bool bCanZoomIn = false;
     bool bCanZoomOut = false;
+
     //bool bCanAdjustTargetArmLength = false;
 
     // target에 Aim이 고정되었는지 체크
@@ -167,16 +178,17 @@ private:
     UPROPERTY()
 	class UCLockedCrossHairUI* LockedCrossshairUI;
 
-
     void InitCrosshairWidgets();
 
     void SetUnlockedCrosshairVisibility (bool bVisible);
     void SetLockedCrosshairVisibility (bool bVisible);
 
-    void StartAim(const FInputActionValue& InValue);
     float EaseOutExpo(float InRatio);
     float EaseOutSine(float InRatio);
+
+    void StartAim(const FInputActionValue& InValue);
     void AdjustTargetArmLength(float InDeltaTime);
+    void AdjustTargetArmLocation(float InDeltaTime);
     void CompleteAim();
 #pragma endregion
 };

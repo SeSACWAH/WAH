@@ -81,7 +81,8 @@ void ACPlayer::Tick(float DeltaTime)
     if (bCanResetDash) ResetDash(DeltaTime);
 
     // Aim
-    if (bCanZoomIn || bCanZoomOut) AdjustTargetArmLength(DeltaTime);
+    //if (bCanZoomIn || bCanZoomOut) AdjustTargetArmLength(DeltaTime);
+    if (bCanZoomIn || bCanZoomOut) AdjustTargetArmLocation(DeltaTime);
 }
 
 void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -125,11 +126,15 @@ void ACPlayer::DoTurn(const FInputActionValue& InValue)
 {
     FVector2d scale = InValue.Get<FVector2d>();
 
-    // 회전 제한
-    float pitch = FMath::Clamp(GetController()->GetControlRotation().Pitch + -(scale.Y), MinPitch, MaxPitch);
-    float yaw = GetController()->GetControlRotation().Yaw + scale.X;
+    // 마우스 감도
+    float mouseSensitivity = (bCanAim) ? MouseSensitivityAim : MouseSensitivityDefault;
 
-    GetController()->SetControlRotation(FRotator(pitch, yaw, GetController()->GetControlRotation().Roll));
+    // pitch : 회전 제한해줌
+    float pitch = FMath::Clamp(GetController()->GetControlRotation().Pitch + scale.Y * mouseSensitivity, MinPitch, MaxPitch);
+    float yaw = GetController()->GetControlRotation().Yaw + scale.X * mouseSensitivity;
+    float roll = GetController()->GetControlRotation().Roll* mouseSensitivity;
+
+    GetController()->SetControlRotation(FRotator(pitch, yaw, roll));
 }
 
 void ACPlayer::DoJump(const FInputActionValue& InValue)
@@ -232,19 +237,6 @@ void ACPlayer::SetLockedCrosshairVisibility(bool bVisible)
         LockedCrossshairUI->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 }
 
-void ACPlayer::StartAim(const FInputActionValue& InValue)
-{
-    // UnlockedCrosshairUI의 Visible 켜주기
-    if (UnlockedCrossshairUI) SetUnlockedCrosshairVisibility(true);
-
-    // Player의 Move 방향으로 회전하도록 설정
-    bUseControllerRotationYaw = true;
-
-    // Target Arm Length 조정
-    ZoomCurrentTime = 0;
-    bCanZoomIn = true;
-}
-
 // for Zoom In
 float ACPlayer::EaseOutExpo(float InRatio)
 {
@@ -255,6 +247,21 @@ float ACPlayer::EaseOutExpo(float InRatio)
 float ACPlayer::EaseOutSine(float InRatio)
 {
     return FMath::Sin((InRatio * PI) / 2);
+}
+
+void ACPlayer::StartAim(const FInputActionValue& InValue)
+{
+    bCanAim = true;
+
+    // UnlockedCrosshairUI의 Visible 켜주기
+    if (UnlockedCrossshairUI) SetUnlockedCrosshairVisibility(true);
+
+    // Player의 Move 방향으로 회전하도록 설정
+    bUseControllerRotationYaw = true;
+
+    // CameraBoom Location 조정
+    ZoomCurrentTime = 0;
+    bCanZoomIn = true;
 }
 
 void ACPlayer::AdjustTargetArmLength(float InDeltaTime)
@@ -295,6 +302,46 @@ void ACPlayer::AdjustTargetArmLength(float InDeltaTime)
     }
 }
 
+void ACPlayer::AdjustTargetArmLocation(float InDeltaTime)
+{
+    UE_LOG(LogTemp, Warning, TEXT(">>> Start Adjust Target Arm Location <<<"));
+
+    ZoomCurrentTime += InDeltaTime;
+    float durTime, ratio;
+    FVector destLoc;
+
+    if (bCanZoomIn)
+    {
+        durTime = AimZoomInTime;
+        ratio = EaseOutExpo(ZoomCurrentTime / AimZoomInTime);
+        destLoc = CameraBoomLocationZoomIn;
+        CameraBoom->SetRelativeLocation( FMath::Lerp(CameraBoomLocationDefault, CameraBoomLocationZoomIn, ratio) );
+        UE_LOG(LogTemp, Error, TEXT(">>> Zoom INNNNNNNNNNN <<<"));
+    }
+
+    if (bCanZoomOut)
+    {
+        durTime = AimZoomOutTime;
+        ratio = EaseOutSine(ZoomCurrentTime / AimZoomOutTime);
+        destLoc = CameraBoomLocationDefault;
+        CameraBoom->SetRelativeLocation(FMath::Lerp(CameraBoomLocationZoomIn, CameraBoomLocationDefault, ratio));
+        UE_LOG(LogTemp, Error, TEXT(">>> Zoom OUTTTTTTTTT <<<"));
+    }
+
+    // 일정 시간 안에 들어왔거나 일정 거리 안에 들어왔다면
+    if (ZoomCurrentTime >= durTime || FVector::Distance(CameraBoom->GetRelativeLocation(), destLoc) < 2)
+    {
+        // 위치 보정
+        CameraBoom->SetRelativeLocation(destLoc);
+
+        ZoomCurrentTime = 0;
+        bCanZoomIn = false;
+        bCanZoomOut = false;
+
+        UE_LOG(LogTemp, Warning, TEXT(">>> Complete Adjust Target Arm Location <<<"));
+    }
+}
+
 
 void ACPlayer::CompleteAim()
 {
@@ -305,7 +352,9 @@ void ACPlayer::CompleteAim()
     // 마우스 커서 방향으로 회전하도록 설정
     bUseControllerRotationYaw = false;
 
-    // Camera Boom의 Arm Length 변경
+    // CameraBoom Location 조정
     bCanZoomOut = true;
+
+    bCanAim = false;
 }
 
