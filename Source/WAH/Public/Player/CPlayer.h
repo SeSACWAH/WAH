@@ -59,10 +59,10 @@ private:
 
     // Turn
     UPROPERTY(EditDefaultsOnly)
-    float MinPitch = -90.f;
+    float MinPitch = -78.f;
 
     UPROPERTY(EditDefaultsOnly)
-    float MaxPitch = 30;
+    float MaxPitch = 50;
 
     UPROPERTY(EditDefaultsOnly, Category = Move)
     float SpeedJog = 600.f;
@@ -135,10 +135,24 @@ private:
 
     // Time
     UPROPERTY(EditDefaultsOnly, Category = Aim)
-    float AimDurationTime = 0.2f;
+    float ZoomCurrentTime = 0.f;
 
     UPROPERTY(EditDefaultsOnly, Category = Aim)
-    float AimCurrentTime = 0.f;
+    float AimZoomInTime = 0.3f;
+
+    UPROPERTY(EditDefaultsOnly, Category = Aim)
+    float AimZoomOutTime = 0.3f;
+
+
+    // Aim input이 들어왔는지 체크
+    //bool bCanAim = false;
+
+    bool bCanZoomIn = false;
+    bool bCanZoomOut = false;
+    //bool bCanAdjustTargetArmLength = false;
+
+    // target에 Aim이 고정되었는지 체크
+    bool bIsAimLocked = false;
 
     // UI
     UPROPERTY(EditDefaultsOnly, Category = UI)
@@ -153,16 +167,16 @@ private:
     UPROPERTY()
 	class UCLockedCrossHairUI* LockedCrossshairUI;
 
-    // target에 Aim이 고정되었는지 체크
-    bool bIsAimLocked = false;
 
     void InitCrosshairWidgets();
 
     void SetUnlockedCrosshairVisibility (bool bVisible);
     void SetLockedCrosshairVisibility (bool bVisible);
 
-    void DoAim(const FInputActionValue& InValue);
-
+    void StartAim(const FInputActionValue& InValue);
+    float EaseOutExpo(float InRatio);
+    float EaseOutSine(float InRatio);
+    void AdjustTargetArmLength(float InDeltaTime);
     void CompleteAim();
 #pragma endregion
 };

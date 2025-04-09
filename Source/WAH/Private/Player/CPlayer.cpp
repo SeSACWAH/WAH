@@ -32,11 +32,12 @@ ACPlayer::ACPlayer()
     CameraBoom->SetupAttachment(RootComponent);
     CameraBoom->TargetArmLength = ArmLengthDefault;
     CameraBoom->bUsePawnControlRotation = true;
-    CameraBoom->SetRelativeLocation(FVector(0, 0, 20));
+    CameraBoom->SetRelativeLocation(FVector(0, 0, 140));
 
     /* Camera */
     PlayerCamear = CreateDefaultSubobject<UCameraComponent>(TEXT("PlayerCamera"));
     PlayerCamear->SetupAttachment(CameraBoom/*, USpringArmComponent::SocketName*/);
+    PlayerCamear->SetRelativeRotation( FRotator(-10, 0, 0) );
     PlayerCamear->bUsePawnControlRotation = false;
 
     /* IMC */
@@ -75,8 +76,12 @@ void ACPlayer::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
+    // Dash
     if (bCanDash) DoDash(DeltaTime);
     if (bCanResetDash) ResetDash(DeltaTime);
+
+    // Aim
+    if (bCanZoomIn || bCanZoomOut) AdjustTargetArmLength(DeltaTime);
 }
 
 void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -101,7 +106,7 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
         inputSystem->BindAction(IA_Jump, ETriggerEvent::Started, this, &ACPlayer::DoJump);
         inputSystem->BindAction(IA_Run, ETriggerEvent::Started, this, &ACPlayer::DoRun);
         inputSystem->BindAction(IA_Dash, ETriggerEvent::Started, this, &ACPlayer::StartDash);
-        inputSystem->BindAction(IA_Aim, ETriggerEvent::Triggered, this, &ACPlayer::DoAim);
+        inputSystem->BindAction(IA_Aim, ETriggerEvent::Started, this, &ACPlayer::StartAim);
         inputSystem->BindAction(IA_Aim, ETriggerEvent::Completed, this, &ACPlayer::CompleteAim);
         
     }
@@ -143,7 +148,7 @@ void ACPlayer::DoRun(const FInputActionValue& InValue)
 template <typename T>
 T ACPlayer::Zoom(T InStartVal, T InEndVal, float InRatio)
 {
-    FMath::Lerp(InStartVal, InEndVal, InRatio);
+    return FMath::Lerp(InStartVal, InEndVal, InRatio);
 }
 
 void ACPlayer::StartDash(const FInputActionValue& InValue)
@@ -163,8 +168,7 @@ void ACPlayer::DoDash(float InDeltaTime)
     DashCurrentTime += InDeltaTime;
     float ratio = DashCurrentTime / DashDurationTime;
 
-    FVector currentPos = Zoom(DashStartPos, DashEndPos, ratio);
-    SetActorLocation(currentPos);
+    SetActorLocation( FMath::Lerp(DashStartPos, DashEndPos, ratio) );
 
     if (DashCurrentTime >= DashDurationTime)
     {
@@ -228,12 +232,67 @@ void ACPlayer::SetLockedCrosshairVisibility(bool bVisible)
         LockedCrossshairUI->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 }
 
-void ACPlayer::DoAim(const FInputActionValue& InValue)
+void ACPlayer::StartAim(const FInputActionValue& InValue)
 {
     // UnlockedCrosshairUI의 Visible 켜주기
-    if(UnlockedCrossshairUI) SetUnlockedCrosshairVisibility(true);
+    if (UnlockedCrossshairUI) SetUnlockedCrosshairVisibility(true);
 
-    // Camera Boom의 Arm Length 변경
+    // Player의 Move 방향으로 회전하도록 설정
+    bUseControllerRotationYaw = true;
+
+    // Target Arm Length 조정
+    ZoomCurrentTime = 0;
+    bCanZoomIn = true;
+}
+
+// for Zoom In
+float ACPlayer::EaseOutExpo(float InRatio)
+{
+    return InRatio == 1 ? 1 : 1 - FMath::Pow(2, -10 * InRatio);
+}
+
+// for Zoom Out
+float ACPlayer::EaseOutSine(float InRatio)
+{
+    return FMath::Sin((InRatio * PI) / 2);
+}
+
+void ACPlayer::AdjustTargetArmLength(float InDeltaTime)
+{
+    UE_LOG(LogTemp, Warning, TEXT(">>> Start Adjust Target Arm Length <<<"));
+    
+    ZoomCurrentTime += InDeltaTime;
+    float durTime, ratio;
+
+    if (bCanZoomIn)
+    {
+        durTime = AimZoomInTime;
+        ratio = EaseOutExpo(ZoomCurrentTime / AimZoomInTime);
+        CameraBoom->TargetArmLength = FMath::Lerp(ArmLengthDefault, ArmLengthAim, ratio);
+        UE_LOG(LogTemp, Error, TEXT(">>> Zoom INNNNNNNNNNN <<<"));
+    }
+
+    if(bCanZoomOut)
+    {
+        durTime = AimZoomOutTime;
+        ratio = EaseOutSine(ZoomCurrentTime / AimZoomOutTime);
+        CameraBoom->TargetArmLength = FMath::Lerp(ArmLengthAim, ArmLengthDefault, ratio);
+        UE_LOG(LogTemp, Error, TEXT(">>> Zoom OUTTTTTTTTT <<<"));
+    }
+
+    // UE_LOG(LogTemp, Error, TEXT(">>> Cur Time : %f / Dur Time : %f / Target Arm Length : %f"), AimCurrentTime, durTime, CameraBoom->TargetArmLength);
+
+    if (ZoomCurrentTime >= durTime)
+    {
+        // 위치 보정
+        //CameraBoom->TargetArmLength = destLen;
+
+        ZoomCurrentTime = 0;
+        bCanZoomIn = false;
+        bCanZoomOut = false;
+
+        UE_LOG(LogTemp, Warning, TEXT(">>> Complete Adjust Target Arm Length <<<"));
+    }
 }
 
 
@@ -243,6 +302,10 @@ void ACPlayer::CompleteAim()
     SetUnlockedCrosshairVisibility(false);
     SetLockedCrosshairVisibility(false);
 
+    // 마우스 커서 방향으로 회전하도록 설정
+    bUseControllerRotationYaw = false;
+
     // Camera Boom의 Arm Length 변경
+    bCanZoomOut = true;
 }
 
