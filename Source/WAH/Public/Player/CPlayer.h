@@ -19,12 +19,24 @@ protected:
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
+
+#pragma region Player Info
+    int32 HP = 100;
+    bool bIsDamaged = false;
+
+    //int32 MaxBulletCount = 3;   // for May
+    //float MaxSapAmount = 100.f; // for Cody
+#pragma endregion
+
 #pragma region Camera
     UPROPERTY(VisibleAnywhere, Category = Camera)
     class UCameraComponent* PlayerCamear;
 
     UPROPERTY(VisibleAnywhere, Category = Camera)
     class USpringArmComponent* CameraBoom;
+
+    UPROPERTY(EditDefaultsOnly, Category = Camera)
+    float ArmLengthDefault = 400.f;
 #pragma endregion
 
 #pragma region IMC
@@ -68,6 +80,11 @@ private:
 
 #pragma endregion
 
+#pragma region Zoom
+    template <typename T>
+    T Zoom(T InStartVal, T InEndVal, float InRatio);
+#pragma endregion
+
 #pragma region Dash
     UPROPERTY(EditDefaultsOnly, Category = Input)
     class UInputAction* IA_Dash;
@@ -83,10 +100,10 @@ private:
 
     float DashCurrentTime = 0.f;
 
-    UPROPERTY(EditDefaultsOnly, Category = Input)
+    UPROPERTY(EditDefaultsOnly, Category = Dash)
     float DashDurationTime = 0.2f;
 
-    UPROPERTY(EditDefaultsOnly, Category = Input)
+    UPROPERTY(EditDefaultsOnly, Category = Dash)
     float DashCoolDownTime = 1.f;
 
     void StartDash(const FInputActionValue& InValue);
@@ -94,4 +111,58 @@ private:
     void ResetDash(float InDeltaTime);
 #pragma endregion
 
+#pragma region Aim
+    /*  Aim에서 구현해야 할 것
+    - UnlockedCrosshairUI가 정중앙에 떠 있다
+        - UnlockedCrosshairUI->SetVisibility(true)
+        - LockedCrossshairUI->SetVisibility(false)
+    - Zoom in이 실행된다 - Camera Boom의 길이가 짧아지게 구현
+    - 마우스 감도가 낮아진다 - Turn이 느리게 바뀌도록 구현
+    - 카메라 위치가 바뀐다 - Camera / Camera Boom의 Location이 바뀌도록 구현
+    - damage 상태면 안보임
+
+    여기서부터 May랑 Cody가 다름
+    - 타겟에 닿으면 활성화 AimedCrosshairUI가 뜸
+        - UnlockedCrosshairUI->SetVisibility(false)
+        - LockedCrossshairUI->SetVisibility(true)
+    - 일정 범위 안에 들어왔으면 Aim이 활성화된다
+    */
+    UPROPERTY(EditDefaultsOnly, Category = Input)
+    class UInputAction* IA_Aim;
+
+    UPROPERTY(EditDefaultsOnly, Category = Camera)
+    float ArmLengthAim = 200.f;
+
+    // Time
+    UPROPERTY(EditDefaultsOnly, Category = Aim)
+    float AimDurationTime = 0.2f;
+
+    UPROPERTY(EditDefaultsOnly, Category = Aim)
+    float AimCurrentTime = 0.f;
+
+    // UI
+    UPROPERTY(EditDefaultsOnly, Category = UI)
+    TSubclassOf<class UCUnlockedCrossHairUI> UnlockedCrossshairWidget;
+
+    UPROPERTY()
+	class UCUnlockedCrossHairUI* UnlockedCrossshairUI;
+
+    UPROPERTY(EditDefaultsOnly, Category = UI)
+    TSubclassOf<class UCLockedCrossHairUI> LockedCrossshairWidget;
+
+    UPROPERTY()
+	class UCLockedCrossHairUI* LockedCrossshairUI;
+
+    // target에 Aim이 고정되었는지 체크
+    bool bIsAimLocked = false;
+
+    void InitCrosshairWidgets();
+
+    void SetUnlockedCrosshairVisibility (bool bVisible);
+    void SetLockedCrosshairVisibility (bool bVisible);
+
+    void DoAim(const FInputActionValue& InValue);
+
+    void CompleteAim();
+#pragma endregion
 };

@@ -6,6 +6,9 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "UI/CUnlockedCrossHairUI.h"
+#include "../../../../../../../Source/Runtime/UMG/Public/Blueprint/UserWidget.h"
+#include "UI/CLockedCrossHairUI.h"
 
 ACPlayer::ACPlayer()
 {
@@ -27,7 +30,7 @@ ACPlayer::ACPlayer()
     /* Camera Boom */
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
     CameraBoom->SetupAttachment(RootComponent);
-    CameraBoom->TargetArmLength = 400.f;
+    CameraBoom->TargetArmLength = ArmLengthDefault;
     CameraBoom->bUsePawnControlRotation = true;
     CameraBoom->SetRelativeLocation(FVector(0, 0, 20));
 
@@ -55,12 +58,17 @@ ACPlayer::ACPlayer()
 
     ConstructorHelpers::FObjectFinder<UInputAction> tmpIADash(TEXT("/Script/EnhancedInput.InputAction'/Game/DYL/Inputs/IA_Dash.IA_Dash'"));
     if (tmpIADash.Succeeded()) IA_Dash = tmpIADash.Object;
+
+    ConstructorHelpers::FObjectFinder<UInputAction> tmpIAAim(TEXT("/Script/EnhancedInput.InputAction'/Game/DYL/Inputs/IA_Aim.IA_Aim'"));
+    if (tmpIAAim.Succeeded()) IA_Aim = tmpIAAim.Object;
 }
 
 void ACPlayer::BeginPlay()
 {
     Super::BeginPlay();
 
+    // Crosshair
+    InitCrosshairWidgets();
 }
 
 void ACPlayer::Tick(float DeltaTime)
@@ -93,6 +101,9 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
         inputSystem->BindAction(IA_Jump, ETriggerEvent::Started, this, &ACPlayer::DoJump);
         inputSystem->BindAction(IA_Run, ETriggerEvent::Started, this, &ACPlayer::DoRun);
         inputSystem->BindAction(IA_Dash, ETriggerEvent::Started, this, &ACPlayer::StartDash);
+        inputSystem->BindAction(IA_Aim, ETriggerEvent::Triggered, this, &ACPlayer::DoAim);
+        inputSystem->BindAction(IA_Aim, ETriggerEvent::Completed, this, &ACPlayer::CompleteAim);
+        
     }
 }
 
@@ -129,6 +140,12 @@ void ACPlayer::DoRun(const FInputActionValue& InValue)
         GetCharacterMovement()->MaxWalkSpeed = SpeedRun;
 }
 
+template <typename T>
+T ACPlayer::Zoom(T InStartVal, T InEndVal, float InRatio)
+{
+    FMath::Lerp(InStartVal, InEndVal, InRatio);
+}
+
 void ACPlayer::StartDash(const FInputActionValue& InValue)
 {
     // 이미 Dash 중이거나 Dash cool down 중이라면 아무 처리하지 않는다
@@ -146,7 +163,7 @@ void ACPlayer::DoDash(float InDeltaTime)
     DashCurrentTime += InDeltaTime;
     float ratio = DashCurrentTime / DashDurationTime;
 
-    FVector currentPos = FMath::Lerp(DashStartPos, DashEndPos, ratio);
+    FVector currentPos = Zoom(DashStartPos, DashEndPos, ratio);
     SetActorLocation(currentPos);
 
     if (DashCurrentTime >= DashDurationTime)
@@ -180,5 +197,52 @@ void ACPlayer::ResetDash(float InDeltaTime)
 
         UE_LOG(LogTemp, Log, TEXT(">>> Dash Cool Down Complete"));
     }
+}
+
+void ACPlayer::InitCrosshairWidgets()
+{
+    if (UnlockedCrossshairWidget)
+    {
+        UnlockedCrossshairUI = Cast<UCUnlockedCrossHairUI>(CreateWidget(GetWorld(), UnlockedCrossshairWidget));
+        UnlockedCrossshairUI->SetVisibility(ESlateVisibility::Hidden);
+        UnlockedCrossshairUI->AddToViewport();
+    }
+
+    if (LockedCrossshairWidget)
+    {
+        LockedCrossshairUI = Cast<UCLockedCrossHairUI>(CreateWidget(GetWorld(), LockedCrossshairWidget));
+        LockedCrossshairUI->SetVisibility(ESlateVisibility::Hidden);
+        LockedCrossshairUI->AddToViewport();
+    }
+}
+
+void ACPlayer::SetUnlockedCrosshairVisibility(bool bVisible)
+{
+    if (UnlockedCrossshairUI)
+        UnlockedCrossshairUI->SetVisibility( bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden );
+}
+
+void ACPlayer::SetLockedCrosshairVisibility(bool bVisible)
+{
+    if (LockedCrossshairUI)
+        LockedCrossshairUI->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+}
+
+void ACPlayer::DoAim(const FInputActionValue& InValue)
+{
+    // UnlockedCrosshairUI의 Visible 켜주기
+    if(UnlockedCrossshairUI) SetUnlockedCrosshairVisibility(true);
+
+    // Camera Boom의 Arm Length 변경
+}
+
+
+void ACPlayer::CompleteAim()
+{
+    // UI들 Visible 꺼주기
+    SetUnlockedCrosshairVisibility(false);
+    SetLockedCrosshairVisibility(false);
+
+    // Camera Boom의 Arm Length 변경
 }
 
