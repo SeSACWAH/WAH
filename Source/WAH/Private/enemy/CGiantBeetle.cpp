@@ -3,6 +3,8 @@
 
 #include "enemy/CGiantBeetle.h"
 #include "enemy/CGiantBeetleFSM.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/BoxComponent.h"
 
 // Sets default values
 ACGiantBeetle::ACGiantBeetle()
@@ -12,6 +14,14 @@ ACGiantBeetle::ACGiantBeetle()
 
 	fsm = CreateDefaultSubobject<UCGiantBeetleFSM>(TEXT("FSM"));
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
+	CapComp = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleComp"));
+	SetRootComponent(CapComp);
+
+	AttackBox = CreateDefaultSubobject<UBoxComponent>(TEXT("AttackBox"));
+	AttackBox->SetupAttachment(RootComponent);
+	AttackBox->SetVisibility(false);
+
 }
 
 // Called when the game starts or when spawned

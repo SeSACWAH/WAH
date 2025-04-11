@@ -8,6 +8,8 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "enemy/CShockwave.h"
 #include "enemy/CHollowCylinder.h"
+#include "Components/BoxComponent.h"
+#include "Components/CapsuleComponent.h"
 
 // Sets default values for this component's properties
 UCGiantBeetleFSM::UCGiantBeetleFSM()
@@ -71,6 +73,7 @@ void UCGiantBeetleFSM::IdleState()
 void UCGiantBeetleFSM::RetargetState()
 {
 	Target = Target == Player1 ? Player2 : Player1;
+	TargetLoc = Target->GetActorLocation() + Me->GetActorForwardVector() * 100;
 	FRotator rot = UKismetMathLibrary::FindLookAtRotation(Me->GetActorLocation(),Target->GetActorLocation());
 	rot.Pitch = 0;
 	CurRotTime += GetWorld()->DeltaTimeSeconds;
@@ -82,7 +85,7 @@ void UCGiantBeetleFSM::RetargetState()
 		if (Me->CurHP == Me->MaxHP)
 		{
 			mState = EBeetleState::Charge;
-			//mState = EBeetleState::TripleJump;
+			//mState = EBeetleState::JumpToTarget;
 
 		}
 		else
@@ -93,8 +96,16 @@ void UCGiantBeetleFSM::RetargetState()
 			}
 			else
 			{
-				if (bWasTriple)
+					JumpStartloc = Me->GetActorLocation();
+					JumpEndloc = Target->GetActorLocation();
+					float dist = FVector::Dist(JumpStartloc, JumpEndloc);
+				if (dist > JumpMinDistance && bWasTriple)
 				{
+					FVector jumpDir = JumpEndloc - JumpStartloc;
+					jumpDir.Z = 0;
+					JumpVelocity = jumpDir.GetSafeNormal() * JumpSpeed;
+					JumpTotTime = jumpDir.Length() / JumpSpeed;
+					JumpVelocityZ = JumpTotTime * JumpGravity / 2;
 					mState = EBeetleState::JumpToTarget;
 				}
 				else
@@ -112,26 +123,48 @@ void UCGiantBeetleFSM::ChargeState()
 	// 타겟이 죽어있으면 Retarget
 
 	// 돌진
-	FVector targetLoc = Target->GetActorLocation() ;
+	FVector curTargetLoc = Target->GetActorLocation();
 	FVector curPos = Me->GetActorLocation();
+	curTargetLoc.Z = curPos.Z;
 
-	curPos = FMath::Lerp(curPos, targetLoc, 1 * GetWorld()->DeltaTimeSeconds);
+	
+	Me->AttackBox->SetVisibility(true);
+	curPos = FMath::Lerp(curPos, TargetLoc, 1 * GetWorld()->DeltaTimeSeconds);
 	Me->SetActorLocation(curPos);
 	
 	// 위치에 도달하면
-	float dist = FVector::Distance(curPos, targetLoc);
+	float dist = FVector::Distance(curPos, TargetLoc);
 	if (dist < 50)
 	{
 		// 박치기를 실패하면 스톰프
 		if (!Me->bKill) Stomp();
 		mState = EBeetleState::Retarget;
 		ChargeCnt++;
+		Me->AttackBox->SetVisibility(false);
 	}
 }
 
 void UCGiantBeetleFSM::JumpToTargetState()
 {
-	bWasTriple = false;
+	JumpCurTime += GetWorld()->DeltaTimeSeconds;
+
+	float t = JumpCurTime /JumpTotTime;
+	if (t >= 1)
+	{
+		Me->SetActorLocation(TargetLoc);
+		Stomp();
+		bWasTriple = false;
+		ChargeCnt = 0;
+		mState = EBeetleState::Idle;
+		JumpCurTime = 0;
+	}
+	else
+	{
+		FVector newLoc = JumpStartloc;
+		newLoc += JumpVelocity * JumpCurTime;
+		newLoc.Z +=  JumpVelocityZ * JumpCurTime - 0.5 * JumpGravity * JumpCurTime * JumpCurTime;
+		Me->SetActorLocation(newLoc);
+	}
 }
 
 void UCGiantBeetleFSM::TripleJumpState()
@@ -146,9 +179,10 @@ void UCGiantBeetleFSM::TripleJumpState()
 
 	if (TripleCnt == 3)
 	{
-		mState = EBeetleState::Idle;
 		bWasTriple = true;
-		TripleCnt = 0;
+		TripleCnt = 0; 
+		ChargeCnt = 0;
+		mState = EBeetleState::Idle;
 	}
 }
 
@@ -169,6 +203,8 @@ void UCGiantBeetleFSM::DieState()
 void UCGiantBeetleFSM::Stomp()
 {
 	//GetWorld()->SpawnActor<ACShockwave>(ShockwaveFac, Me->GetActorTransform());
-	GetWorld()->SpawnActor<ACHollowCylinder>(ShockCylFac, Me->GetActorTransform());
+	FVector spawnLoc = Me->GetActorLocation();
+	spawnLoc.Z = 0;
+	GetWorld()->SpawnActor<ACHollowCylinder>(ShockCylFac, spawnLoc, FRotator());
 }
 

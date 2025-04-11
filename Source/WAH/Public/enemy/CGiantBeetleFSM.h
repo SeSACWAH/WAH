@@ -68,6 +68,24 @@ public:
 
 	float CurTJTime = 0.0f;
 
+	UPROPERTY(EditAnywhere, Category = Jump)
+	float JumpSpeed = 1500;
+
+	float JumpTotTime;
+	float JumpCurTime;
+
+	UPROPERTY(EditAnywhere, Category = Jump)
+	float JumpGravity = 980;
+
+	float JumpVelocityZ = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Jump)
+	float JumpMinDistance = 200;
+	
+	FVector JumpStartloc;
+	FVector JumpEndloc;
+	FVector JumpVelocity;
+
 
 	UPROPERTY(EditDefaultsOnly, Category = FSM)
 	int32 MaxChargeCnt = 2;
@@ -76,8 +94,9 @@ public:
 
 	int32 TripleCnt = 0;
 
-	bool bWasTriple = true;
+	FVector TargetLoc;
 
+	bool bWasTriple = true;
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class ACShockwave> ShockwaveFac;

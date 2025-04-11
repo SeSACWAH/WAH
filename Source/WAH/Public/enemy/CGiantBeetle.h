@@ -23,10 +23,17 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UCapsuleComponent* CapComp;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UBoxComponent* AttackBox;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = FSMComponent)
 	class UCGiantBeetleFSM* fsm;
 
 	float MaxHP = 100;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float CurHP = MaxHP;
 
 	bool bKill = false;
