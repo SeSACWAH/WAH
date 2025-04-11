@@ -46,6 +46,16 @@ private:
     class UInputMappingContext* IMC_Player;
 #pragma endregion
 
+#pragma region Gun
+    UPROPERTY(EditAnywhere, Category = Gun)
+    TSubclassOf<class ACGun> GunBP;
+
+    UPROPERTY()
+    class ACGun* Gun;
+
+    void AttachGun();
+#pragma endregion
+
 #pragma region Move
     UPROPERTY(EditDefaultsOnly, Category = Input)
     class UInputAction* IA_Move;
@@ -147,18 +157,14 @@ private:
     float ZoomCurrentTime = 0.f;
 
     UPROPERTY(EditDefaultsOnly, Category = Aim)
-    float AimZoomInTime = 0.3f;
-
-    UPROPERTY(EditDefaultsOnly, Category = Aim)
-    float AimZoomOutTime = 0.3f;
+    float AimZoomMaxTime = 0.3f;
 
     // Mouse Sensitivity
      UPROPERTY(EditDefaultsOnly, Category = Aim)
     float MouseSensitivityAim = MouseSensitivityDefault * 0.2f;
     
     bool bCanAim = false;   // Aim input이 들어왔는지 체크
-    bool bCanZoomIn = false;
-    bool bCanZoomOut = false;
+    bool bCanZoom = false;
 
     //bool bCanAdjustTargetArmLength = false;
 
@@ -183,11 +189,11 @@ private:
     void SetUnlockedCrosshairVisibility (bool bVisible);
     void SetLockedCrosshairVisibility (bool bVisible);
 
+    float EaseInOutQuad(float InRatio);
     float EaseOutExpo(float InRatio);
     float EaseOutSine(float InRatio);
 
     void StartAim(const FInputActionValue& InValue);
-    void AdjustTargetArmLength(float InDeltaTime);
     void AdjustTargetArmLocation(float InDeltaTime);
     void CompleteAim();
 #pragma endregion

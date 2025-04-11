@@ -23,18 +23,12 @@ private:
 	class USphereComponent* Bullet;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Bullet")
-	int32 LineSmooth = 40;
+	float BulletSpeed = 1000.f;
 
-	TArray<FVector> Lines;
+	FVector StartPos;
+	FVector EndPos;
+	FVector Velocity;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Bullet")
-	float BulletForce = 1500.f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Bullet")
-	float BulletGravity = -3000;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Bullet")
-	float BulletSimulateTime = 0.02f;
-
-	void MoveBullet(FVector InStartPos, FVector InEndPos)
+public:
+	void SetPositionAndVelocity(FVector InStartPos, FVector InEndPos);
 };

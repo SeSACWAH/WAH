@@ -2,8 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "../../../../../../../Plugins/FX/Niagara/Source/Niagara/Public/NiagaraComponent.h"
-#include "../../../../../../../Plugins/FX/Niagara/Source/Niagara/Classes/NiagaraSystem.h"
 #include "CGun.generated.h"
 
 UCLASS()
@@ -25,15 +23,20 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Gun")
 	class UStaticMeshComponent* GunMeshComp;
 
+	// Bullets
+	int32 BulletFXNum = 6;
+
+	UPROPERTY(EditDefaultsOnly, Category = Bullet)
+	TArray<class ACBullet*> Bullets;
+
 	// Spawn Effect
 	int32 FireFXNum = 6;
 
     UPROPERTY(EditDefaultsOnly, Category = Gun)
-    TArray<UNiagaraSystem*> FireFXSystems;
+    TArray<class UNiagaraSystem*> FireFXSystems;
 
 	UPROPERTY(EditDefaultsOnly, Category = Gun)
-	TArray<UNiagaraComponent*> FireFXPool;
-
+	TArray<class UNiagaraComponent*> FireFXPool;
 
 	void InitializeFireFXSystem();
 	void InitializeFireFXPool();

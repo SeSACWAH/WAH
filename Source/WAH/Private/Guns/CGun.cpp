@@ -1,6 +1,8 @@
 #include "Guns/CGun.h"
 #include "../../../../../../../Source/Runtime/Engine/Classes/Components/StaticMeshComponent.h"
 #include "../../../../../../../Plugins/FX/Niagara/Source/Niagara/Public/NiagaraFunctionLibrary.h"
+#include "../../../../../../../Plugins/FX/Niagara/Source/Niagara/Public/NiagaraComponent.h"
+#include "../../../../../../../Plugins/FX/Niagara/Source/Niagara/Classes/NiagaraSystem.h"
 
 ACGun::ACGun()
 {
@@ -10,7 +12,7 @@ ACGun::ACGun()
 	GunMeshComp = CreateDefaultSubobject<UStaticMeshComponent>( TEXT("GunMeshComp") );
 	GunMeshComp->SetupAttachment(RootComponent);
 
-	ConstructorHelpers::FObjectFinder<UStaticMesh> tmpMesh(TEXT(""));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> tmpMesh(TEXT("/Script/Engine.StaticMesh'/Game/DYL/Meshes/PistolMesh/SM_Pistol.SM_Pistol'"));
 	if (tmpMesh.Succeeded()) GunMeshComp->SetStaticMesh(tmpMesh.Object);
 
 	// Fire Niagara

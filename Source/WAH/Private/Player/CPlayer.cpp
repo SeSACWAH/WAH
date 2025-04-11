@@ -9,6 +9,7 @@
 #include "UI/CUnlockedCrossHairUI.h"
 #include "../../../../../../../Source/Runtime/UMG/Public/Blueprint/UserWidget.h"
 #include "UI/CLockedCrossHairUI.h"
+#include "Guns/CGun.h"
 
 ACPlayer::ACPlayer()
 {
@@ -70,6 +71,9 @@ void ACPlayer::BeginPlay()
 
     // Crosshair
     InitCrosshairWidgets();
+
+    // Gun
+    AttachGun();
 }
 
 void ACPlayer::Tick(float DeltaTime)
@@ -81,8 +85,7 @@ void ACPlayer::Tick(float DeltaTime)
     if (bCanResetDash) ResetDash(DeltaTime);
 
     // Aim
-    //if (bCanZoomIn || bCanZoomOut) AdjustTargetArmLength(DeltaTime);
-    if (bCanZoomIn || bCanZoomOut) AdjustTargetArmLocation(DeltaTime);
+    AdjustTargetArmLocation(DeltaTime);
 }
 
 void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -110,6 +113,16 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
         inputSystem->BindAction(IA_Aim, ETriggerEvent::Started, this, &ACPlayer::StartAim);
         inputSystem->BindAction(IA_Aim, ETriggerEvent::Completed, this, &ACPlayer::CompleteAim);
         
+    }
+}
+
+void ACPlayer::AttachGun()
+{
+    if (GunBP)
+    {
+        Gun = GetWorld()->SpawnActor<ACGun>(GunBP);
+        if(Gun) Gun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("Gun"));
+        //UE_LOG(LogTemp, Error, TEXT(">>> Attach Gun Success"));
     }
 }
 
@@ -237,13 +250,18 @@ void ACPlayer::SetLockedCrosshairVisibility(bool bVisible)
         LockedCrossshairUI->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 }
 
-// for Zoom In
+float ACPlayer::EaseInOutQuad(float InRatio)
+{
+    return InRatio < 0.5 ? 2 * InRatio * InRatio : 1 - FMath::Pow(-2 * InRatio + 2, 2) / 2;
+}
+
+// for Zoom In - Alpha
 float ACPlayer::EaseOutExpo(float InRatio)
 {
     return InRatio == 1 ? 1 : 1 - FMath::Pow(2, -10 * InRatio);
 }
 
-// for Zoom Out
+// for Zoom Out - Alpha
 float ACPlayer::EaseOutSine(float InRatio)
 {
     return FMath::Sin((InRatio * PI) / 2);
@@ -253,6 +271,15 @@ void ACPlayer::StartAim(const FInputActionValue& InValue)
 {
     bCanAim = true;
 
+    // ZoomCurrentTime 세팅
+    /* 마냥 0으로 초기화하면 안됨. 왜냐, Zoom In/Out이 다 되지 않았는데 0으로 초기화하면
+       다시 처음 위치에서부터 Lerp 비율을 계산하기 때문에 원점으로 되돌아가게 됨
+       왜 처음 위치에서부터 Lerp 비율을 계산하냐, Lerp가 일정한 속도로 가게 시간을 기준으로 ratio를 결정하기 때문이다
+       따라서 Zoom In/Out이 채 끝나지 않았을 경우에는 CompleteAim()이 실행된 시점에서의 ZoomCurrentTime을 유지하고 있어야 한다
+       즉, CameraBoom의 Target Arm Length가 목표 위치에 도달했을 때만 ZoomCurrentTime이 0이 된다
+    */
+    if (CameraBoom->GetComponentLocation() == CameraBoomLocationDefault) ZoomCurrentTime = 0;
+
     // UnlockedCrosshairUI의 Visible 켜주기
     if (UnlockedCrossshairUI) SetUnlockedCrosshairVisibility(true);
 
@@ -260,91 +287,37 @@ void ACPlayer::StartAim(const FInputActionValue& InValue)
     bUseControllerRotationYaw = true;
 
     // CameraBoom Location 조정
-    ZoomCurrentTime = 0;
-    bCanZoomIn = true;
-}
-
-void ACPlayer::AdjustTargetArmLength(float InDeltaTime)
-{
-    UE_LOG(LogTemp, Warning, TEXT(">>> Start Adjust Target Arm Length <<<"));
-    
-    ZoomCurrentTime += InDeltaTime;
-    float durTime, ratio;
-
-    if (bCanZoomIn)
-    {
-        durTime = AimZoomInTime;
-        ratio = EaseOutExpo(ZoomCurrentTime / AimZoomInTime);
-        CameraBoom->TargetArmLength = FMath::Lerp(ArmLengthDefault, ArmLengthAim, ratio);
-        UE_LOG(LogTemp, Error, TEXT(">>> Zoom INNNNNNNNNNN <<<"));
-    }
-
-    if(bCanZoomOut)
-    {
-        durTime = AimZoomOutTime;
-        ratio = EaseOutSine(ZoomCurrentTime / AimZoomOutTime);
-        CameraBoom->TargetArmLength = FMath::Lerp(ArmLengthAim, ArmLengthDefault, ratio);
-        UE_LOG(LogTemp, Error, TEXT(">>> Zoom OUTTTTTTTTT <<<"));
-    }
-
-    // UE_LOG(LogTemp, Error, TEXT(">>> Cur Time : %f / Dur Time : %f / Target Arm Length : %f"), AimCurrentTime, durTime, CameraBoom->TargetArmLength);
-
-    if (ZoomCurrentTime >= durTime)
-    {
-        // 위치 보정
-        //CameraBoom->TargetArmLength = destLen;
-
-        ZoomCurrentTime = 0;
-        bCanZoomIn = false;
-        bCanZoomOut = false;
-
-        UE_LOG(LogTemp, Warning, TEXT(">>> Complete Adjust Target Arm Length <<<"));
-    }
+    bCanZoom = true;
 }
 
 void ACPlayer::AdjustTargetArmLocation(float InDeltaTime)
 {
     UE_LOG(LogTemp, Warning, TEXT(">>> Start Adjust Target Arm Location <<<"));
 
-    ZoomCurrentTime += InDeltaTime;
-    float durTime, ratio;
-    FVector destLoc;
+    //ZoomCurrentTime += InDeltaTime;
+    float ratio;
 
-    if (bCanZoomIn)
-    {
-        durTime = AimZoomInTime;
-        ratio = EaseOutExpo(ZoomCurrentTime / AimZoomInTime);
-        destLoc = CameraBoomLocationZoomIn;
-        CameraBoom->SetRelativeLocation( FMath::Lerp(CameraBoomLocationDefault, CameraBoomLocationZoomIn, ratio) );
-        UE_LOG(LogTemp, Error, TEXT(">>> Zoom INNNNNNNNNNN <<<"));
-    }
+    if (bCanZoom) ZoomCurrentTime += InDeltaTime;
+    else ZoomCurrentTime -= InDeltaTime;
 
-    if (bCanZoomOut)
-    {
-        durTime = AimZoomOutTime;
-        ratio = EaseOutSine(ZoomCurrentTime / AimZoomOutTime);
-        destLoc = CameraBoomLocationDefault;
-        CameraBoom->SetRelativeLocation(FMath::Lerp(CameraBoomLocationZoomIn, CameraBoomLocationDefault, ratio));
-        UE_LOG(LogTemp, Error, TEXT(">>> Zoom OUTTTTTTTTT <<<"));
-    }
+    // CurTime이 범위를 벗어나는 것을 한정해줌
+    ZoomCurrentTime = FMath::Clamp(ZoomCurrentTime, 0, AimZoomMaxTime);
 
-    // 일정 시간 안에 들어왔거나 일정 거리 안에 들어왔다면
-    if (ZoomCurrentTime >= durTime || FVector::Distance(CameraBoom->GetRelativeLocation(), destLoc) < 2)
-    {
-        // 위치 보정
-        CameraBoom->SetRelativeLocation(destLoc);
-
-        ZoomCurrentTime = 0;
-        bCanZoomIn = false;
-        bCanZoomOut = false;
-
-        UE_LOG(LogTemp, Warning, TEXT(">>> Complete Adjust Target Arm Location <<<"));
-    }
+    ratio = EaseInOutQuad(ZoomCurrentTime / AimZoomMaxTime);
+    CameraBoom->SetRelativeLocation(FMath::Lerp(CameraBoomLocationDefault, CameraBoomLocationZoomIn, ratio));
 }
 
 
 void ACPlayer::CompleteAim()
 {
+    // ZoomCurrentTime 세팅
+    /* 마냥 0으로 초기화하면 안됨. 왜냐, Zoom In/Out이 다 되지 않았는데 0으로 초기화하면
+       다시 처음 위치에서부터 Lerp 비율을 계산하기 때문에 원점으로 되돌아가게 됨
+       왜 처음 위치에서부터 Lerp 비율을 계산하냐, Lerp가 일정한 속도로 가게 시간을 기준으로 ratio를 결정하기 때문이다
+       따라서 Zoom In/Out이 채 끝나지 않았을 경우에는 CompleteAim()이 실행된 시점에서의 ZoomCurrentTime을 유지하고 있어야 한다
+       즉, CameraBoom의 Target Arm Length가 목표 위치에 도달했을 때만 ZoomCurrentTime이 0이 된다
+    */
+
     // UI들 Visible 꺼주기
     SetUnlockedCrosshairVisibility(false);
     SetLockedCrosshairVisibility(false);
@@ -353,7 +326,7 @@ void ACPlayer::CompleteAim()
     bUseControllerRotationYaw = false;
 
     // CameraBoom Location 조정
-    bCanZoomOut = true;
+    bCanZoom = false;
 
     bCanAim = false;
 }
