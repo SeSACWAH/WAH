@@ -18,17 +18,28 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 
-private:
+protected:
     UPROPERTY(EditDefaultsOnly, Category = "Bullet")
-	class USphereComponent* Bullet;
+	class USphereComponent* BulletComp;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Bullet")
+	class UStaticMeshComponent* BulletMesh;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Bullet")
 	float BulletSpeed = 1000.f;
 
-	FVector StartPos;
-	FVector EndPos;
-	FVector Velocity;
+	bool bCanMove = false;
+
+	FVector FireDestination;
 
 public:
-	void SetPositionAndVelocity(FVector InStartPos, FVector InEndPos);
+	USphereComponent* GetBulletComp() const { return BulletComp; };
+	void SetFireDestination(FVector InDirection) { FireDestination = InDirection; }
+	void SetCanMove(bool InResult) { bCanMove = InResult; }
+
+	void ActivateBullet(bool bIsActivate);
+	void MoveBullet(float InDeltaTime);
+
+protected:
+	void Die();
 };

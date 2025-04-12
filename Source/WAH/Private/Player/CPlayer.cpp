@@ -10,6 +10,8 @@
 #include "../../../../../../../Source/Runtime/UMG/Public/Blueprint/UserWidget.h"
 #include "UI/CLockedCrossHairUI.h"
 #include "Guns/CGun.h"
+#include <Kismet/KismetSystemLibrary.h>
+#include "Kismet/GameplayStatics.h"
 
 ACPlayer::ACPlayer()
 {
@@ -63,6 +65,11 @@ ACPlayer::ACPlayer()
 
     ConstructorHelpers::FObjectFinder<UInputAction> tmpIAAim(TEXT("/Script/EnhancedInput.InputAction'/Game/DYL/Inputs/IA_Aim.IA_Aim'"));
     if (tmpIAAim.Succeeded()) IA_Aim = tmpIAAim.Object;
+
+    ConstructorHelpers::FObjectFinder<UInputAction> tmpIAFire(TEXT("/Script/EnhancedInput.InputAction'/Game/DYL/Inputs/IA_Fire.IA_Fire'"));
+    if(tmpIAFire.Succeeded()) IA_Fire = tmpIAFire.Object;
+
+    /* Gun */
 }
 
 void ACPlayer::BeginPlay()
@@ -111,20 +118,24 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
         inputSystem->BindAction(IA_Run, ETriggerEvent::Started, this, &ACPlayer::DoRun);
         inputSystem->BindAction(IA_Dash, ETriggerEvent::Started, this, &ACPlayer::StartDash);
         inputSystem->BindAction(IA_Aim, ETriggerEvent::Started, this, &ACPlayer::StartAim);
+        inputSystem->BindAction(IA_Aim, ETriggerEvent::Triggered, this, &ACPlayer::TriggerAim);
         inputSystem->BindAction(IA_Aim, ETriggerEvent::Completed, this, &ACPlayer::CompleteAim);
-        
+        inputSystem->BindAction(IA_Fire, ETriggerEvent::Started, this, &ACPlayer::DoFire);
     }
 }
 
-void ACPlayer::AttachGun()
+void ACPlayer::OnDamaged(int32 InDamage)
 {
-    if (GunBP)
-    {
-        Gun = GetWorld()->SpawnActor<ACGun>(GunBP);
-        if(Gun) Gun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("Gun"));
-        //UE_LOG(LogTemp, Error, TEXT(">>> Attach Gun Success"));
-    }
+    bIsDamaged = true;
+    SetHP(InDamage);
+    if(HP <= 0) OnDead();
 }
+
+void ACPlayer::OnDead()
+{
+    bIsDead = true;
+}
+
 
 void ACPlayer::DoMove(const struct FInputActionValue& InValue)
 {
@@ -163,12 +174,6 @@ void ACPlayer::DoRun(const FInputActionValue& InValue)
         GetCharacterMovement()->MaxWalkSpeed = SpeedRun;
 }
 
-template <typename T>
-T ACPlayer::Zoom(T InStartVal, T InEndVal, float InRatio)
-{
-    return FMath::Lerp(InStartVal, InEndVal, InRatio);
-}
-
 void ACPlayer::StartDash(const FInputActionValue& InValue)
 {
     // 이미 Dash 중이거나 Dash cool down 중이라면 아무 처리하지 않는다
@@ -197,7 +202,6 @@ void ACPlayer::DoDash(float InDeltaTime)
 
         // Dash가 끝났음을 명시
         bCanDash = false;
-
         DashCurrentTime = 0;
 
         // Dash CoolDown이 시작되었음을 명시
@@ -214,7 +218,6 @@ void ACPlayer::ResetDash(float InDeltaTime)
     {
         // Cool down이 끝났음을 명시
         bCanResetDash = false;
-
         DashCurrentTime = 0;
 
         UE_LOG(LogTemp, Log, TEXT(">>> Dash Cool Down Complete"));
@@ -271,13 +274,6 @@ void ACPlayer::StartAim(const FInputActionValue& InValue)
 {
     bCanAim = true;
 
-    // ZoomCurrentTime 세팅
-    /* 마냥 0으로 초기화하면 안됨. 왜냐, Zoom In/Out이 다 되지 않았는데 0으로 초기화하면
-       다시 처음 위치에서부터 Lerp 비율을 계산하기 때문에 원점으로 되돌아가게 됨
-       왜 처음 위치에서부터 Lerp 비율을 계산하냐, Lerp가 일정한 속도로 가게 시간을 기준으로 ratio를 결정하기 때문이다
-       따라서 Zoom In/Out이 채 끝나지 않았을 경우에는 CompleteAim()이 실행된 시점에서의 ZoomCurrentTime을 유지하고 있어야 한다
-       즉, CameraBoom의 Target Arm Length가 목표 위치에 도달했을 때만 ZoomCurrentTime이 0이 된다
-    */
     if (CameraBoom->GetComponentLocation() == CameraBoomLocationDefault) ZoomCurrentTime = 0;
 
     // UnlockedCrosshairUI의 Visible 켜주기
@@ -292,7 +288,7 @@ void ACPlayer::StartAim(const FInputActionValue& InValue)
 
 void ACPlayer::AdjustTargetArmLocation(float InDeltaTime)
 {
-    UE_LOG(LogTemp, Warning, TEXT(">>> Start Adjust Target Arm Location <<<"));
+    //UE_LOG(LogTemp, Warning, TEXT(">>> Start Adjust Target Arm Location <<<"));
 
     //ZoomCurrentTime += InDeltaTime;
     float ratio;
@@ -307,17 +303,64 @@ void ACPlayer::AdjustTargetArmLocation(float InDeltaTime)
     CameraBoom->SetRelativeLocation(FMath::Lerp(CameraBoomLocationDefault, CameraBoomLocationZoomIn, ratio));
 }
 
-
-void ACPlayer::CompleteAim()
+void ACPlayer::TriggerAim(const FInputActionValue& InValue)
 {
-    // ZoomCurrentTime 세팅
-    /* 마냥 0으로 초기화하면 안됨. 왜냐, Zoom In/Out이 다 되지 않았는데 0으로 초기화하면
-       다시 처음 위치에서부터 Lerp 비율을 계산하기 때문에 원점으로 되돌아가게 됨
-       왜 처음 위치에서부터 Lerp 비율을 계산하냐, Lerp가 일정한 속도로 가게 시간을 기준으로 ratio를 결정하기 때문이다
-       따라서 Zoom In/Out이 채 끝나지 않았을 경우에는 CompleteAim()이 실행된 시점에서의 ZoomCurrentTime을 유지하고 있어야 한다
-       즉, CameraBoom의 Target Arm Length가 목표 위치에 도달했을 때만 ZoomCurrentTime이 0이 된다
-    */
+    FVector startPos = Gun->GetFirePosition();
+    FVector endPos = startPos + PlayerCamear->GetForwardVector() * SphereTraceDistance;
 
+    FHitResult hitResult;
+    TArray<AActor*> actorsToIgnore;
+    actorsToIgnore.Add(this);
+    
+    DrawDebugSphere(GetWorld(), startPos, SphereTraceRadius, 12, FColor::Orange);
+
+    bool bHit = UKismetSystemLibrary::SphereTraceSingle(this, startPos, endPos, SphereTraceRadius, UEngineTypes::ConvertToTraceType(ECC_Visibility), false, actorsToIgnore, EDrawDebugTrace::ForDuration, hitResult, true, FColor::Purple, FColor::Orange, 0.5f);
+
+    if (bHit)
+    {
+        FireDestination = hitResult.Location;
+
+        bool bHitBySap = hitResult.GetComponent()->ComponentHasTag(FName("Sap"));
+        bool bHitBySapCenter = hitResult.GetComponent()->ComponentHasTag(FName("SapCenter"));
+
+        UE_LOG(LogTemp, Warning, TEXT("[HIT] bHitBySap : %d / bHitBySapCenter : %d"), bHitBySap, bHitBySapCenter
+
+        // Sap이 들어있는 통에 닿았다면
+        if (bHitBySap || bHitBySapCenter)
+        {
+            // UnlockedCrosshair를 꺼준다
+            SetUnlockedCrosshairVisibility(false);
+
+            // LockedCrossHair를 켜준다
+            SetLockedCrosshairVisibility(true);
+
+            if (bHitBySapCenter)
+            {
+                // FireDestination의 스크린 좌표 위치를 구한다
+                FVector2D screenPos;
+                APlayerController* pc = Cast<APlayerController>(GetController());
+                // 마지막 true : DPI Scaling을 무시하겠다
+                bool bProjected = UGameplayStatics::ProjectWorldToScreen(pc, FireDestination, screenPos, true);
+
+                if (bProjected)
+                {
+                    // LockedCrossHair의 위치를 FireDestination의 스크린 좌표 위치로 갱신해준다
+                    LockedCrossshairUI->UpdateCrosshairPosition(screenPos);
+                }
+            }
+        }
+    }
+    else
+    {
+        FireDestination = endPos;
+        SetLockedCrosshairVisibility(false);
+        SetUnlockedCrosshairVisibility(true);
+    }
+}
+
+
+void ACPlayer::CompleteAim(const FInputActionValue& InValue)
+{
     // UI들 Visible 꺼주기
     SetUnlockedCrosshairVisibility(false);
     SetLockedCrosshairVisibility(false);
@@ -331,3 +374,19 @@ void ACPlayer::CompleteAim()
     bCanAim = false;
 }
 
+
+void ACPlayer::AttachGun()
+{
+    if (GunBP)
+    {
+        Gun = GetWorld()->SpawnActor<ACGun>(GunBP);
+        if(Gun) Gun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("Gun"));
+        UE_LOG(LogTemp, Error, TEXT(">>> Attach Gun Success"));
+    }
+}
+
+void ACPlayer::DoFire()
+{
+    UE_LOG(LogTemp, Error, TEXT(">>>>> Fire Input Entered <<<<<"));
+    //Gun->FireBullet(FireDestination);
+}
