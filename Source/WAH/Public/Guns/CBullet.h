@@ -26,10 +26,10 @@ protected:
 	class UStaticMeshComponent* BulletMesh;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Bullet")
-	float BulletSpeed = 1000.f;
+	float BulletSpeed = 2000.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Bullet")
-	float BulletDieTime = 5.f;
+	float BulletDieTime = 3.f;
 
 	bool bCanMove = false;
 
@@ -42,5 +42,9 @@ public:
 	void SetCanMove(bool InResult) { bCanMove = InResult; }
 
 	void ActivateBullet(bool bIsActivate);
-	void MoveBullet(float InDeltaTime);
+	void DoMoveBullet(float InDeltaTime);
+	void CompleteMoveBullet(FVector InDestination);
+
+	UFUNCTION()
+	void OnBulletOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 };

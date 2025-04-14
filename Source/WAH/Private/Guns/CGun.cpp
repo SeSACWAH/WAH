@@ -104,7 +104,8 @@ void ACGun::FireBullet(FVector InDestination)
 	if (!bIsFound) 
 	{
 		UE_LOG(LogTemp, Warning, TEXT("--------------Couldn't find BULLET--------------"));
-		AddBulletToPool(true);
+		AddBulletToPool(false);
+		FireBullet(InDestination);
 	}
 }
 

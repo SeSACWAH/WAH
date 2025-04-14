@@ -312,10 +312,11 @@ void ACPlayer::TriggerAim(const FInputActionValue& InValue)
     TArray<AActor*> actorsToIgnore;
     actorsToIgnore.Add(this);
     
-    DrawDebugSphere(GetWorld(), startPos, SphereTraceRadius, 12, FColor::Orange);
+    //DrawDebugSphere(GetWorld(), startPos, SphereTraceRadius, 12, FColor::Orange);
 
-    bool bHit = UKismetSystemLibrary::SphereTraceSingle(this, startPos, endPos, SphereTraceRadius, UEngineTypes::ConvertToTraceType(ECC_Visibility), false, actorsToIgnore, EDrawDebugTrace::ForDuration, hitResult, true, FColor::Purple, FColor::Orange, 0.5f);
-
+    ETraceTypeQuery myTraceType = UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_GameTraceChannel6);
+    bool bHit = UKismetSystemLibrary::SphereTraceSingle(this, startPos, endPos, SphereTraceRadius, myTraceType, false, actorsToIgnore, EDrawDebugTrace::ForDuration, hitResult, true, FColor::Purple, FColor::Orange, 0.5f);
+    
     if (bHit)
     {
         FireDestination = hitResult.Location;
