@@ -39,7 +39,7 @@ void ACBullet::Tick(float DeltaTime)
 void ACBullet::ActivateBullet(bool bIsActivate)
 {
 	// Visibility
-	BulletComp->SetVisibility(bIsActivate);
+	BulletMesh->SetVisibility(bIsActivate);
 
 	// Collision
 	auto collision = bIsActivate ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::NoCollision;
@@ -50,11 +50,16 @@ void ACBullet::ActivateBullet(bool bIsActivate)
 
 void ACBullet::MoveBullet(float InDeltaTime)
 {
+	// ¿Ãµø
 	FVector direction = FireDestination - GetActorLocation();
-	SetActorLocation(GetActorLocation() + (direction * BulletSpeed) * InDeltaTime);
-}
-
-void ACBullet::Die()
-{
+	SetActorLocation(GetActorLocation() + (direction.GetSafeNormal() * BulletSpeed) * InDeltaTime);
+	
+	if (FVector::Dist(GetActorLocation(), FireDestination) <= 3)
+	{
+		SetActorLocation(FireDestination);
+		FTimerHandle handle;
+		auto lambda = [&](){ this->Destroy(); };
+		GetWorld()->GetTimerManager().SetTimer(handle, lambda, BulletDieTime, false);
+	}
 }
 

@@ -28,18 +28,19 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Bullet")
 	float BulletSpeed = 1000.f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Bullet")
+	float BulletDieTime = 5.f;
+
 	bool bCanMove = false;
 
 	FVector FireDestination;
 
 public:
 	USphereComponent* GetBulletComp() const { return BulletComp; };
+	UStaticMeshComponent* GetBulletMesh() const { return BulletMesh; }
 	void SetFireDestination(FVector InDirection) { FireDestination = InDirection; }
 	void SetCanMove(bool InResult) { bCanMove = InResult; }
 
 	void ActivateBullet(bool bIsActivate);
 	void MoveBullet(float InDeltaTime);
-
-protected:
-	void Die();
 };

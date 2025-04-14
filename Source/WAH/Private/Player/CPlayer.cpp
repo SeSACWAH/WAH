@@ -323,7 +323,7 @@ void ACPlayer::TriggerAim(const FInputActionValue& InValue)
         bool bHitBySap = hitResult.GetComponent()->ComponentHasTag(FName("Sap"));
         bool bHitBySapCenter = hitResult.GetComponent()->ComponentHasTag(FName("SapCenter"));
 
-        UE_LOG(LogTemp, Warning, TEXT("[HIT] bHitBySap : %d / bHitBySapCenter : %d"), bHitBySap, bHitBySapCenter
+        UE_LOG(LogTemp, Warning, TEXT("[HIT] bHitBySap : %d / bHitBySapCenter : %d"), bHitBySap, bHitBySapCenter);
 
         // Sap이 들어있는 통에 닿았다면
         if (bHitBySap || bHitBySapCenter)
@@ -387,6 +387,9 @@ void ACPlayer::AttachGun()
 
 void ACPlayer::DoFire()
 {
+    if(!bCanAim) return;
+
     UE_LOG(LogTemp, Error, TEXT(">>>>> Fire Input Entered <<<<<"));
-    //Gun->FireBullet(FireDestination);
+
+    Gun->FireBullet(FireDestination);
 }

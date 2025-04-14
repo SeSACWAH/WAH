@@ -52,7 +52,7 @@ void ACGun::AddBulletToPool(bool bIsActivate)
 	ACBullet* bullet = GetWorld()->SpawnActor<ACBullet>(BulletSpawner, firePosition, params);
 
 	bullet->ActivateBullet(bIsActivate);
-
+	bullet->SetCanMove(bIsActivate);
 	BulletPool.Add(bullet);
 
 	//UE_LOG(LogTemp, Warning, TEXT("[%d] : Add Bullet To Pool"), BulletPool.Num());
@@ -70,20 +70,22 @@ void ACGun::FireBullet(FVector InDestination)
 {
 	bool bIsFound = false;
 
-	FTransform firePosition = GunMeshComp->GetSocketTransform(TEXT("FirePosition"));
+	FVector firePosition = GunMeshComp->GetSocketLocation(TEXT("FirePosition"));
+
+	UE_LOG(LogTemp, Error, TEXT(">>>>> Fire Pos : %s / InDes : %s<<<<<"), *firePosition.ToString(), *InDestination.ToString());
 
 	for (auto bullet : BulletPool)
 	{
 		// 비활성화 된 총알이라면
-		if(!bullet->GetBulletComp()->GetVisibleFlag())
+		if(!bullet->GetBulletMesh()->GetVisibleFlag())
 		{
 			// 활성화하고 총구 위치에 배치한다
 			bIsFound = true;
 
 			bullet->ActivateBullet(true);
-			firePosition.SetScale3D(bullet->GetBulletComp()->GetComponentScale());
-			bullet->SetActorTransform(firePosition);
-			bullet->SetFireDirection(InDestination);
+			//firePosition.SetScale3D(bullet->GetBulletComp()->GetComponentScale());
+			bullet->SetActorLocation(firePosition);
+			bullet->SetFireDestination(InDestination);
 			bullet->SetCanMove(true);
 
 			// 소리를 재생한다
