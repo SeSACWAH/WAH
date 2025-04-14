@@ -126,15 +126,35 @@ void UCGiantBeetleFSM::ChargeState()
 	FVector curTargetLoc = Target->GetActorLocation();
 	FVector curPos = Me->GetActorLocation();
 	curTargetLoc.Z = curPos.Z;
-
+	FVector vel = Me->GetActorForwardVector();
+	float dotRes = FVector::DotProduct(vel, curTargetLoc-curPos);
+	FVector crossRes = FVector::CrossProduct(vel, curTargetLoc - curPos);
 	
+	// 어텍박스 활성화
 	Me->AttackBox->SetVisibility(true);
-	curPos = FMath::Lerp(curPos, TargetLoc, 1 * GetWorld()->DeltaTimeSeconds);
-	Me->SetActorLocation(curPos);
 	
+	//// lerp 직선이동
+	//curPos = FMath::Lerp(curPos, TargetLoc, 1 * GetWorld()->DeltaTimeSeconds);
+	//Me->SetActorLocation(curPos);
+	
+	// 약간 커브이동
+	FRotator newRot = Me->GetActorRotation();
+	if (dotRes >= 0)
+	{
+		if ( crossRes.Z >10)
+		{
+			newRot -= Me->GetActorRightVector().Rotation() * ChargeCurve;
+		}
+		else if (crossRes.Z < -10)
+		{
+			newRot += Me->GetActorRightVector().Rotation() * ChargeCurve;
+		}
+	}
+	Me->SetActorRelativeRotation(newRot);
+	Me->SetActorLocation(curPos + Me->GetActorForwardVector() * ChargeSpeed * GetWorld()->DeltaTimeSeconds);
+
 	// 위치에 도달하면
-	float dist = FVector::Distance(curPos, TargetLoc);
-	if (dist < 50)
+	if (dotRes < -10)
 	{
 		// 박치기를 실패하면 스톰프
 		if (!Me->bKill) Stomp();
