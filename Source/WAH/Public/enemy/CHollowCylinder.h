@@ -41,4 +41,6 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	class UProceduralMeshComponent* ProceduralMeshComp;
 
+	UFUNCTION()
+
 };

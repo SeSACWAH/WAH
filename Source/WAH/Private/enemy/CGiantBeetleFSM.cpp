@@ -84,8 +84,15 @@ void UCGiantBeetleFSM::RetargetState()
 	{
 		if (Me->CurHP == Me->MaxHP)
 		{
-			mState = EBeetleState::Charge;
-			//mState = EBeetleState::JumpToTarget;
+			JumpStartloc = Me->GetActorLocation();
+			JumpEndloc = Target->GetActorLocation();
+			FVector jumpDir = JumpEndloc - JumpStartloc;
+			jumpDir.Z = 0;
+			JumpVelocity = jumpDir.GetSafeNormal() * JumpSpeed;
+			JumpTotTime = jumpDir.Length() / JumpSpeed;
+			JumpVelocityZ = JumpTotTime * JumpGravity / 2;
+			//mState = EBeetleState::Charge;
+			mState = EBeetleState::TripleJump;
 
 		}
 		else
@@ -128,8 +135,8 @@ void UCGiantBeetleFSM::ChargeState()
 	curTargetLoc.Z = curPos.Z;
 	FVector vel = Me->GetActorForwardVector();
 	float dotRes = FVector::DotProduct(vel, curTargetLoc-curPos);
-	FVector crossRes = FVector::CrossProduct(vel, curTargetLoc - curPos);
-	
+	FVector crossRes = FVector::CrossProduct( curTargetLoc - curPos , vel);
+	float checkRight = FVector::DotProduct(Me->GetActorUpVector(),crossRes);
 	// 어텍박스 활성화
 	Me->AttackBox->SetVisibility(true);
 	
@@ -137,17 +144,31 @@ void UCGiantBeetleFSM::ChargeState()
 	//curPos = FMath::Lerp(curPos, TargetLoc, 1 * GetWorld()->DeltaTimeSeconds);
 	//Me->SetActorLocation(curPos);
 	
+	UE_LOG(LogTemp, Warning, TEXT("%s, %f, %f"), *crossRes.ToString(), dotRes, checkRight);
+
 	// 약간 커브이동
 	FRotator newRot = Me->GetActorRotation();
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *Me->GetActorRightVector().Rotation().ToString());
 	if (dotRes >= 0)
 	{
 		if ( crossRes.Z >10)
 		{
-			newRot -= Me->GetActorRightVector().Rotation() * ChargeCurve;
+			newRot -= FRotator(0 , 1, 0) * ChargeCurve;
 		}
 		else if (crossRes.Z < -10)
 		{
+			newRot += FRotator(0, 1, 0) * ChargeCurve;
+		}
+	}
+	else
+	{
+		if (crossRes.Z > 10)
+		{
 			newRot += Me->GetActorRightVector().Rotation() * ChargeCurve;
+		}
+		else if (crossRes.Z < -10)
+		{
+			newRot -= Me->GetActorRightVector().Rotation() * ChargeCurve;
 		}
 	}
 	Me->SetActorRelativeRotation(newRot);
@@ -158,7 +179,7 @@ void UCGiantBeetleFSM::ChargeState()
 	{
 		// 박치기를 실패하면 스톰프
 		if (!Me->bKill) Stomp();
-		mState = EBeetleState::Retarget;
+		mState = EBeetleState::Idle;
 		ChargeCnt++;
 		Me->AttackBox->SetVisibility(false);
 	}
