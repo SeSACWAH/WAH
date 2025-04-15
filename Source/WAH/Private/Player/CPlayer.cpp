@@ -45,6 +45,9 @@ ACPlayer::ACPlayer()
     PlayerCamear->SetRelativeRotation( FRotator(-10, 0, 0) );
     PlayerCamear->bUsePawnControlRotation = false;
 
+    /* Collision */
+
+
     /* IMC */
     ConstructorHelpers::FObjectFinder<UInputMappingContext> tmpIMC(TEXT("/Script/EnhancedInput.InputMappingContext'/Game/DYL/Inputs/IMC_Player.IMC_Player'"));
     if (tmpIMC.Succeeded()) IMC_Player = tmpIMC.Object;
@@ -88,17 +91,25 @@ void ACPlayer::BeginPlay()
     FTimerHandle testGetDamage;
     auto lambda1 = [&]()
         {
-            HP -= 6;
-            UE_LOG(LogTemp, Warning, TEXT("[DAMAGE TEST] DAMAGED!!! Current HP : %d"), HP);
+            UE_LOG(LogTemp, Warning, TEXT("[DAMAGE TEST] DAMAGED!!! Current HP : %d"), 6);
+            OnDamaged(6);
         };
-    GetWorld()->GetTimerManager().SetTimer(testGetDamage, lambda1, 5.f, false);
+    GetWorld()->GetTimerManager().SetTimer(testGetDamage, lambda1, 3.f, false);
 
-    FTimerHandle damageTimer;
-    auto lambda2 = [&]() {
-        bIsDamaged = false;
-        RecoverHP();
+    //FTimerHandle damageTimer;
+    //auto lambda2 = [&]() {
+    //    bIsDamaged = false;
+    //    RecoverHP();
+    //    };
+    //GetWorld()->GetTimerManager().SetTimer(damageTimer, lambda2, DamageDurationTime, false);
+
+    FTimerHandle testDead;
+    auto lambda3 = [&]()
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[DEAD TEST] DEAD!!! Current HP : %d"), 0);
+            OnDamaged(12);
         };
-    GetWorld()->GetTimerManager().SetTimer(damageTimer, lambda2, DamageDurationTime, false);
+    GetWorld()->GetTimerManager().SetTimer(testDead, lambda3, 20.f, false);
 }
 
 void ACPlayer::Tick(float DeltaTime)
@@ -111,6 +122,9 @@ void ACPlayer::Tick(float DeltaTime)
 
     // Aim
     AdjustTargetArmLocation(DeltaTime);
+
+    // Revive
+    if(bIsReviving) OnRevive(DeltaTime);
 }
 
 void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -177,12 +191,54 @@ void ACPlayer::RecoverHP()
 void ACPlayer::OnDead()
 {
     bIsDead = true;
+
+    // Skeletal Mesh Visibility 꺼짐
+    GetMesh()->SetVisibility(false);
+    // GunMesh의 Visibility 꺼짐
+    Gun->GetGunMeshComp()->SetVisibility(false);
+    //Actor Location 위치 지하로 변경
+    SetActorLocation(GetActorLocation() + -GetActorUpVector() * 100);
+    // 죽음 FX의 Visibility를 켠다
+
+    // 죽음 FX가 끝나면
+    // 화면 채도가 살짝 낮아진다
+    // 화면이 뿌얘진다
+    // 부활 타이머가 시작된다
+    bIsReviving = true;
+    // 부활 UI가 뜬다
+    // E 버튼을 누르면 부활하는데 걸리는 시간이 줄어든다
+
+}
+
+void ACPlayer::OnRevive(float InDeltaTime)
+{
+    if (CurrentReviveTime < RevivalTime)
+    {
+        CurrentReviveTime += InDeltaTime;
+    }
+    else
+    {
+        //Skeletal Mesh Visibility 켜짐
+        GetMesh()->SetVisibility(true);
+        // GunMesh의 Visibility 켜짐
+        Gun->GetGunMeshComp()->SetVisibility(true);
+        //등장 FX Visible 켜기
+        //원점에 스폰됨
+        SetActorLocation(FVector(0));
+        SetActorRotation(FRotator(0, 180, 0));
+        // 죽음 및 부활 관련 변수들 초기화
+        bIsReviving = false;
+        bIsDead = false;
+        //일정 시간동안 Enemy랑 충돌해도 무적 상태가 되게 Collision 설정해주고
+        //일정 시간 끝나면 원래 Collision 상태로 돌아오도록
+        CurrentReviveTime = 0;
+    }
 }
 
 
 void ACPlayer::DoMove(const struct FInputActionValue& InValue)
 {
-    if (bCanDash) return;
+    if (bCanDash || bIsDead || bIsReviving) return;
 
     FVector2D scale = InValue.Get<FVector2D>();
 
@@ -197,7 +253,10 @@ void ACPlayer::DoTurn(const FInputActionValue& InValue)
     float mouseSensitivity = (bCanAim) ? MouseSensitivityAim : MouseSensitivityDefault;
 
     // pitch : 회전 제한해줌
-    float pitch = FMath::Clamp(GetController()->GetControlRotation().Pitch + scale.Y * mouseSensitivity, MinPitch, MaxPitch);
+    // 부활 중일 땐 조금만 회전하게
+    float min = bIsReviving ? MinPitchRevival : MinPitchDefault;
+    float max = bIsReviving ? MaxPitchRevival : MaxPitchDefault;
+    float pitch = FMath::Clamp(GetController()->GetControlRotation().Pitch + scale.Y * mouseSensitivity, min, max);
     float yaw = GetController()->GetControlRotation().Yaw + scale.X * mouseSensitivity;
     float roll = GetController()->GetControlRotation().Roll* mouseSensitivity;
 
@@ -206,11 +265,15 @@ void ACPlayer::DoTurn(const FInputActionValue& InValue)
 
 void ACPlayer::DoJump(const FInputActionValue& InValue)
 {
+    if (bIsDead || bIsReviving) return;
+
     Jump();
 }
 
 void ACPlayer::DoRun(const FInputActionValue& InValue)
 {
+    if (bIsDead || bIsReviving) return;
+
     if (GetCharacterMovement()->MaxWalkSpeed > SpeedJog)
         GetCharacterMovement()->MaxWalkSpeed = SpeedJog;
     else
@@ -221,6 +284,8 @@ void ACPlayer::DoRun(const FInputActionValue& InValue)
 
 void ACPlayer::StartDash(const FInputActionValue& InValue)
 {
+    if (bIsDead || bIsReviving) return;
+
     // 이미 Dash 중이거나 Dash cool down 중이라면 아무 처리하지 않는다
     if (bCanDash || bCanResetDash) return;
 
@@ -317,6 +382,8 @@ float ACPlayer::EaseOutSine(float InRatio)
 
 void ACPlayer::StartAim(const FInputActionValue& InValue)
 {
+    if (bIsDead || bIsReviving) return;
+
     bCanAim = true;
 
     if (CameraBoom->GetComponentLocation() == CameraBoomLocationDefault) ZoomCurrentTime = 0;
@@ -350,6 +417,8 @@ void ACPlayer::AdjustTargetArmLocation(float InDeltaTime)
 
 void ACPlayer::TriggerAim(const FInputActionValue& InValue)
 {
+    if (bIsDead || bIsReviving) return;
+
     FVector startPos = Gun->GetFirePosition();
     FVector endPos = startPos + PlayerCamear->GetForwardVector() * SphereTraceDistance;
 
@@ -392,22 +461,21 @@ void ACPlayer::TriggerAim(const FInputActionValue& InValue)
             if (sapFull)
             {
                 sapCenterLocation = sapFull->GetComponentLocation() + sapFull->GetUpVector() * sapFull->GetScaledSphereRadius();
+                FireDestination = sapCenterLocation;
+                // Sap Center의 스크린 좌표 위치를 구한다
+                FVector2D screenPos;
+                APlayerController* pc = Cast<APlayerController>(GetController());
+                // 마지막 true : DPI Scaling을 무시하겠다
+                bool bProjected = UWidgetLayoutLibrary::ProjectWorldLocationToWidgetPosition(pc, sapCenterLocation, screenPos, false);
+
+                if (bProjected)
+                {
+                    // LockedCrossHair의 위치를 FireDestination의 스크린 좌표 위치로 갱신해준다
+                    LockedCrossshairUI->UpdateCrosshairPosition(screenPos);
+                    //UE_LOG(LogTemp, Warning, TEXT("---screenPos : %s"), *screenPos.ToString());
+                }
             }
 
-            FireDestination = sapCenterLocation;
-
-            // Sap Center의 스크린 좌표 위치를 구한다
-            FVector2D screenPos;
-            APlayerController* pc = Cast<APlayerController>(GetController());
-            // 마지막 true : DPI Scaling을 무시하겠다
-            bool bProjected = UWidgetLayoutLibrary::ProjectWorldLocationToWidgetPosition(pc, sapCenterLocation, screenPos, false);
-
-            if (bProjected)
-            {
-                // LockedCrossHair의 위치를 FireDestination의 스크린 좌표 위치로 갱신해준다
-                LockedCrossshairUI->UpdateCrosshairPosition(screenPos);
-                //UE_LOG(LogTemp, Warning, TEXT("---screenPos : %s"), *screenPos.ToString());
-            }
         }
         else
         {
@@ -452,6 +520,8 @@ void ACPlayer::AttachGun()
 
 void ACPlayer::DoFire()
 {
+    if (bIsDead || bIsReviving) return;
+
     // Aim 모드가 아니거나, 총알이 전부 소진되었거나, Fire 중이라면
     // MAY
     if(!bCanAim || CurrentBulletCount == 0 || bIsInFireDelayTime) return;

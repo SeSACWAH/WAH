@@ -24,13 +24,19 @@ protected:
     int32 HP = MaxHP;
     bool bIsDamaged = false;
     bool bIsDead = false;
+    bool bIsReviving = false;
 
     float DamageDurationTime = 10.f;
     float RecoverTime = 0.2f;
 
-    void OnDamaged(int32 InDamage);
+    float CurrentReviveTime = 0;
+    float RevivalTime = 7.f;
+
     void RecoverHP();
     void OnDead();
+    void OnRevive(float InDeltaTime);
+public:
+    void OnDamaged(int32 InDamage);
 #pragma endregion
 
 #pragma region Getters
@@ -83,10 +89,16 @@ private:
 
     // Turn
     UPROPERTY(EditDefaultsOnly, Category = Move)
-    float MinPitch = -78.f;
+    float MinPitchDefault = -78.f;
 
     UPROPERTY(EditDefaultsOnly, Category = Move)
-    float MaxPitch = 50;
+    float MaxPitchDefault = 50;
+
+    UPROPERTY(EditDefaultsOnly, Category = Move)
+    float MinPitchRevival = MinPitchDefault * 0.5;
+
+    UPROPERTY(EditDefaultsOnly, Category = Move)
+    float MaxPitchRevival = MaxPitchDefault * 0.5;
 
     UPROPERTY(EditDefaultsOnly, Category = Move)
     float MouseSensitivityDefault = 0.85;

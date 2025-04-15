@@ -23,7 +23,6 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = "Gun|Default")
 	class UStaticMeshComponent* GunMeshComp;
 
-
 	// Bullet
 	UPROPERTY(EditDefaultsOnly, Category = "Gun|Bullet")
 	int32 MaxBulletCnt = 6;
@@ -37,6 +36,7 @@ private:
 	void AddBulletToPool(bool bIsActivate);
 	void InitializeBulletPool();
 public:
+	UStaticMeshComponent* GetGunMeshComp(){return GunMeshComp;};
 	FVector GetFirePosition();
 	void FireBullet(FVector InDestination);
 
