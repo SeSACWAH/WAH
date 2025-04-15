@@ -18,17 +18,35 @@ protected:
     virtual void Tick(float DeltaTime) override;
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-private:
-
-#pragma region Player Info
-    int32 HP = 100;
+#pragma region Player State
+protected:
+    int32 MaxHP = 12;
+    int32 HP = MaxHP;
     bool bIsDamaged = false;
+    bool bIsDead = false;
 
-    //int32 MaxBulletCount = 3;   // for May
-    //float MaxSapAmount = 100.f; // for Cody
+    float DamageDurationTime = 10.f;
+
+    void OnDamaged(int32 InDamage);
+    void OnDead();
+#pragma endregion
+
+#pragma region Getters
+public:
+    int32 GetHp() const { return HP; }
+    bool GetIsDamaged() const { return bIsDamaged; }
+    bool GetIsDead() const { return bIsDead; }
+#pragma endregion
+
+#pragma region Setters
+protected:
+    void SetHP(int32 InHP) { HP += InHP; }
+    void SetIsDamaged(bool InResult) { bIsDamaged = InResult; }
+    void SetIsDead(bool InResult) { bIsDead = InResult; }
 #pragma endregion
 
 #pragma region Camera
+private:
     UPROPERTY(VisibleAnywhere, Category = Camera)
     class UCameraComponent* PlayerCamear;
 
@@ -42,19 +60,11 @@ private:
 #pragma endregion
 
 #pragma region IMC
+private:
     UPROPERTY(EditDefaultsOnly, Category = Input)
     class UInputMappingContext* IMC_Player;
 #pragma endregion
 
-#pragma region Gun
-    UPROPERTY(EditAnywhere, Category = Gun)
-    TSubclassOf<class ACGun> GunBP;
-
-    UPROPERTY()
-    class ACGun* Gun;
-
-    void AttachGun();
-#pragma endregion
 
 #pragma region Move
     UPROPERTY(EditDefaultsOnly, Category = Input)
@@ -81,10 +91,10 @@ private:
 
     // Speed
     UPROPERTY(EditDefaultsOnly, Category = Move)
-    float SpeedJog = 600.f;
+    float SpeedJog = 500.f;
 
     UPROPERTY(EditDefaultsOnly, Category = Move)
-    float SpeedRun = 900.f;
+    float SpeedRun = 800.f;
 
     void DoMove(const struct FInputActionValue& InValue);
 
@@ -94,11 +104,6 @@ private:
 
     void DoRun(const struct FInputActionValue& InValue);
 
-#pragma endregion
-
-#pragma region Zoom
-    template <typename T>
-    T Zoom(T InStartVal, T InEndVal, float InRatio);
 #pragma endregion
 
 #pragma region Dash
@@ -120,7 +125,7 @@ private:
     float DashDurationTime = 0.2f;
 
     UPROPERTY(EditDefaultsOnly, Category = Dash)
-    float DashCoolDownTime = 1.f;
+    float DashCoolDownTime = 0.7f;
 
     void StartDash(const FInputActionValue& InValue);
     void DoDash(float InDeltaTime);
@@ -136,6 +141,8 @@ private:
     - 마우스 감도가 낮아진다 - Turn이 느리게 바뀌도록 구현
     - 카메라 위치가 바뀐다 - Camera / Camera Boom의 Location이 바뀌도록 구현
     - damage 상태면 안보임
+    - Sphere Trace를 진행한다
+    - 기존 Speed에서 일정 Speed만큼 느려진다
 
     여기서부터 May랑 Cody가 다름
     - 타겟에 닿으면 활성화 AimedCrosshairUI가 뜸
@@ -160,7 +167,7 @@ private:
     float AimZoomMaxTime = 0.3f;
 
     // Mouse Sensitivity
-     UPROPERTY(EditDefaultsOnly, Category = Aim)
+    UPROPERTY(EditDefaultsOnly, Category = Aim)
     float MouseSensitivityAim = MouseSensitivityDefault * 0.2f;
     
     bool bCanAim = false;   // Aim input이 들어왔는지 체크
@@ -184,6 +191,15 @@ private:
     UPROPERTY()
 	class UCLockedCrossHairUI* LockedCrossshairUI;
 
+    // Sphere Trace
+    UPROPERTY(EditDefaultsOnly, Category = "Aim|SphereTrace")
+    float SphereTraceDistance = 10000.f;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Aim|SphereTrace")
+    float SphereTraceRadius = 10.f;
+
+    FVector FireDestination;
+
     void InitCrosshairWidgets();
 
     void SetUnlockedCrosshairVisibility (bool bVisible);
@@ -195,6 +211,43 @@ private:
 
     void StartAim(const FInputActionValue& InValue);
     void AdjustTargetArmLocation(float InDeltaTime);
-    void CompleteAim();
+    void TriggerAim(const FInputActionValue& InValue);
+    void CompleteAim(const FInputActionValue& InValue);
 #pragma endregion
+
+#pragma region Gun
+    UPROPERTY(EditAnywhere, Category = Gun)
+    TSubclassOf<class ACGun> GunBP;
+
+    UPROPERTY()
+    class ACGun* Gun;
+
+    void AttachGun();
+#pragma endregion
+
+#pragma region Fire
+    UPROPERTY(EditDefaultsOnly, Category = Input)
+    class UInputAction* IA_Fire;
+
+    // MAY
+    int32 MaxBulletCount = 3;
+    int32 CurrentBulletCount = MaxBulletCount;
+
+    // CODY
+    float MaxSapAmount = 1;
+    float CurrentSapAmout = MaxSapAmount;
+
+    bool bIsInFireDelayTime = false;
+
+    UPROPERTY(EditDefaultsOnly, Category = Fire)
+    float FireDelayTime = 1.0f;
+
+    // MAY
+    // MUST ChargeAmmoTime < FireDelayTime
+    UPROPERTY(EditDefaultsOnly, Category = Fire)
+    float ChargeAmmoTime = 3.5f;
+
+    void DoFire();
+#pragma endregion
+
 };

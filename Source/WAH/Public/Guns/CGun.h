@@ -18,28 +18,51 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 
-protected:
+private:
 	// Gun Mesh
-    UPROPERTY(EditDefaultsOnly, Category = "Gun")
+    UPROPERTY(EditDefaultsOnly, Category = "Gun|Default")
 	class UStaticMeshComponent* GunMeshComp;
 
-	// Bullets
-	int32 BulletFXNum = 6;
 
-	UPROPERTY(EditDefaultsOnly, Category = Bullet)
-	TArray<class ACBullet*> Bullets;
+	// Bullet
+	UPROPERTY(EditDefaultsOnly, Category = "Gun|Bullet")
+	int32 MaxBulletCnt = 6;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Gun|Bullet")
+	TArray<class ACBullet*> BulletPool;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Gun|Bullet")
+	TSubclassOf<class ACBullet> BulletSpawner;
+
+	void AddBulletToPool(bool bIsActivate);
+	void InitializeBulletPool();
+public:
+	FVector GetFirePosition();
+	void FireBullet(FVector InDestination);
 
 	// Spawn Effect
-	int32 FireFXNum = 6;
+private:
+	int32 MaxFireFXCnt = 6;
 
-    UPROPERTY(EditDefaultsOnly, Category = Gun)
-    TArray<class UNiagaraSystem*> FireFXSystems;
+    UPROPERTY(EditDefaultsOnly, Category = "Gun|FX")
+    TArray<class UNiagaraSystem*> FireFXSystemPool;
 
-	UPROPERTY(EditDefaultsOnly, Category = Gun)
+	UPROPERTY(EditDefaultsOnly, Category = "Gun|FX")
 	TArray<class UNiagaraComponent*> FireFXPool;
 
-	void InitializeFireFXSystem();
+
+	void AddFireFXToPool(bool bIsActivate);
 	void InitializeFireFXPool();
 	void PlayFireFX();
 	void OnFireFXFinished(UNiagaraComponent* InComp);
+
+	// Sound
+private:
+	// 발사되었을 때 재생할 소리
+	UPROPERTY(EditAnywhere, Category = "Gun|Sound")
+	class USoundBase* FireSound;
+
+	// Enemy 외의 곳에 충돌했을 때 재생할 소리
+	UPROPERTY(EditAnywhere, Category = "Gun|Sound")
+	class USoundBase* HitSound;
 };

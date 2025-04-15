@@ -18,17 +18,33 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 
-private:
+protected:
     UPROPERTY(EditDefaultsOnly, Category = "Bullet")
-	class USphereComponent* Bullet;
+	class USphereComponent* BulletComp;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Bullet")
-	float BulletSpeed = 1000.f;
+	class UStaticMeshComponent* BulletMesh;
 
-	FVector StartPos;
-	FVector EndPos;
-	FVector Velocity;
+	UPROPERTY(EditDefaultsOnly, Category = "Bullet")
+	float BulletSpeed = 2000.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Bullet")
+	float BulletDieTime = 3.f;
+
+	bool bCanMove = false;
+
+	FVector FireDestination;
 
 public:
-	void SetPositionAndVelocity(FVector InStartPos, FVector InEndPos);
+	USphereComponent* GetBulletComp() const { return BulletComp; };
+	UStaticMeshComponent* GetBulletMesh() const { return BulletMesh; }
+	void SetFireDestination(FVector InDirection) { FireDestination = InDirection; }
+	void SetCanMove(bool InResult) { bCanMove = InResult; }
+
+	void ActivateBullet(bool bIsActivate);
+	void DoMoveBullet(float InDeltaTime);
+	void CompleteMoveBullet(FVector InDestination);
+
+	UFUNCTION()
+	void OnBulletOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 };
