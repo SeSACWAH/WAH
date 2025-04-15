@@ -26,8 +26,10 @@ protected:
     bool bIsDead = false;
 
     float DamageDurationTime = 10.f;
+    float RecoverTime = 0.2f;
 
     void OnDamaged(int32 InDamage);
+    void RecoverHP();
     void OnDead();
 #pragma endregion
 

@@ -83,6 +83,22 @@ void ACPlayer::BeginPlay()
 
     // Gun
     AttachGun();
+
+    // Damage Recover Test
+    FTimerHandle testGetDamage;
+    auto lambda1 = [&]()
+        {
+            HP -= 6;
+            UE_LOG(LogTemp, Warning, TEXT("[DAMAGE TEST] DAMAGED!!! Current HP : %d"), HP);
+        };
+    GetWorld()->GetTimerManager().SetTimer(testGetDamage, lambda1, 5.f, false);
+
+    FTimerHandle damageTimer;
+    auto lambda2 = [&]() {
+        bIsDamaged = false;
+        RecoverHP();
+        };
+    GetWorld()->GetTimerManager().SetTimer(damageTimer, lambda2, DamageDurationTime, false);
 }
 
 void ACPlayer::Tick(float DeltaTime)
@@ -133,7 +149,29 @@ void ACPlayer::OnDamaged(int32 InDamage)
     if(HP <= 0) OnDead();
 
     // 일정 시간이 지나면 회복한다
+    FTimerHandle damageTimer;
+    auto lambda = [&]() {
+            bIsDamaged = false;
+            RecoverHP();
+        };
+    GetWorld()->GetTimerManager().SetTimer(damageTimer, lambda, DamageDurationTime, false);
+}
 
+void ACPlayer::RecoverHP()
+{
+    FTimerHandle recoverTimer;
+    auto lambda = [&](){
+        if(HP < MaxHP)
+        {
+            HP++;
+            UE_LOG(LogTemp, Warning, TEXT("[Recover] Current HP : %d"), HP);
+        }
+        else
+        {
+            GetWorld()->GetTimerManager().ClearTimer(recoverTimer);
+        }
+            };
+    GetWorld()->GetTimerManager().SetTimer(recoverTimer, lambda, RecoverTime, true);
 }
 
 void ACPlayer::OnDead()
@@ -355,6 +393,8 @@ void ACPlayer::TriggerAim(const FInputActionValue& InValue)
             {
                 sapCenterLocation = sapFull->GetComponentLocation() + sapFull->GetUpVector() * sapFull->GetScaledSphereRadius();
             }
+
+            FireDestination = sapCenterLocation;
 
             // Sap Center의 스크린 좌표 위치를 구한다
             FVector2D screenPos;
