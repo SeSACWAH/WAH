@@ -9,7 +9,8 @@ ACBullet::ACBullet()
 	BulletComp = CreateDefaultSubobject<USphereComponent>(TEXT("BulletComp"));
 	SetRootComponent(BulletComp);
 	BulletComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	//BulletComp->SetCollisionProfileName(TEXT("Bullet"));
+	// MAY
+	BulletComp->SetCollisionProfileName(TEXT("Match"));
 
 	BulletComp->OnComponentBeginOverlap.AddDynamic(this, &ACBullet::OnBulletOverlap);
 
@@ -58,14 +59,17 @@ void ACBullet::DoMoveBullet(float InDeltaTime)
 	FVector direction = FireDestination - GetActorLocation();
 	SetActorLocation(GetActorLocation() + (direction.GetSafeNormal() * BulletSpeed) * InDeltaTime);
 	
-	if (FVector::Dist(GetActorLocation(), FireDestination) <= 3)
+	if (FVector::Dist(GetActorLocation(), FireDestination) <= 50)
 		CompleteMoveBullet(FireDestination);
 }
 
 void ACBullet::CompleteMoveBullet(FVector InDestination)
 {
+	if (!bCanMove) return;
+
 	bCanMove = false;
 	SetActorLocation(InDestination);
+
 	FTimerHandle handle;
 	auto lambda = [&]() { this->BulletMesh->SetVisibility(false); };
 	GetWorld()->GetTimerManager().SetTimer(handle, lambda, BulletDieTime, false);
@@ -73,6 +77,8 @@ void ACBullet::CompleteMoveBullet(FVector InDestination)
 
 void ACBullet::OnBulletOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	if(!bCanMove) return;
+
 	// Hit된 곳으로 위치 보정
 	CompleteMoveBullet(SweepResult.Location);
 }

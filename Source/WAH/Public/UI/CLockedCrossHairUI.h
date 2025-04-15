@@ -6,15 +6,13 @@
 #include "Blueprint/UserWidget.h"
 #include "CLockedCrossHairUI.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class WAH_API UCLockedCrossHairUI : public UUserWidget
 {
 	GENERATED_BODY()
-	
+
 public:
+	
 	UPROPERTY(BlueprintReadWrite, Category = "UI", meta = (BindWidget))
 	class UCanvasPanel* CanvasPanel;
 

@@ -12,6 +12,8 @@
 #include "Guns/CGun.h"
 #include <Kismet/KismetSystemLibrary.h>
 #include "Kismet/GameplayStatics.h"
+#include "../../../../../../../Source/Runtime/UMG/Public/Blueprint/WidgetLayoutLibrary.h"
+#include "../../../../../../../Source/Runtime/Engine/Classes/Components/SphereComponent.h"
 
 ACPlayer::ACPlayer()
 {
@@ -127,8 +129,11 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 void ACPlayer::OnDamaged(int32 InDamage)
 {
     bIsDamaged = true;
-    SetHP(InDamage);
+    HP -= InDamage;
     if(HP <= 0) OnDead();
+
+    // 일정 시간이 지나면 회복한다
+
 }
 
 void ACPlayer::OnDead()
@@ -172,6 +177,8 @@ void ACPlayer::DoRun(const FInputActionValue& InValue)
         GetCharacterMovement()->MaxWalkSpeed = SpeedJog;
     else
         GetCharacterMovement()->MaxWalkSpeed = SpeedRun;
+
+    UE_LOG(LogTemp, Warning, TEXT("[Change Speed] Current Speed : %f"), GetCharacterMovement()->MaxWalkSpeed);
 }
 
 void ACPlayer::StartDash(const FInputActionValue& InValue)
@@ -311,23 +318,20 @@ void ACPlayer::TriggerAim(const FInputActionValue& InValue)
     FHitResult hitResult;
     TArray<AActor*> actorsToIgnore;
     actorsToIgnore.Add(this);
-    
-    //DrawDebugSphere(GetWorld(), startPos, SphereTraceRadius, 12, FColor::Orange);
 
-    ETraceTypeQuery myTraceType = UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_GameTraceChannel6);
-    bool bHit = UKismetSystemLibrary::SphereTraceSingle(this, startPos, endPos, SphereTraceRadius, myTraceType, false, actorsToIgnore, EDrawDebugTrace::ForDuration, hitResult, true, FColor::Purple, FColor::Orange, 0.5f);
+    bool bHit = UKismetSystemLibrary::SphereTraceSingle(this, startPos, endPos, SphereTraceRadius, UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_GameTraceChannel6), false, actorsToIgnore, EDrawDebugTrace::ForDuration, hitResult, true, FColor::Purple, FColor::Orange, 0.3f);
     
     if (bHit)
     {
         FireDestination = hitResult.Location;
 
         bool bHitBySap = hitResult.GetComponent()->ComponentHasTag(FName("Sap"));
-        bool bHitBySapCenter = hitResult.GetComponent()->ComponentHasTag(FName("SapCenter"));
+        //bool bHitBySapCenter = hitResult.GetComponent()->ComponentHasTag(FName("SapCenter"));
 
-        UE_LOG(LogTemp, Warning, TEXT("[HIT] bHitBySap : %d / bHitBySapCenter : %d"), bHitBySap, bHitBySapCenter);
+        //UE_LOG(LogTemp, Warning, TEXT("[HIT] bHitBySap : %d / bHitBySapCenter : %d"), bHitBySap, bHitBySapCenter);
 
         // Sap이 들어있는 통에 닿았다면
-        if (bHitBySap || bHitBySapCenter)
+        if (bHitBySap)
         {
             // UnlockedCrosshair를 꺼준다
             SetUnlockedCrosshairVisibility(false);
@@ -335,20 +339,40 @@ void ACPlayer::TriggerAim(const FInputActionValue& InValue)
             // LockedCrossHair를 켜준다
             SetLockedCrosshairVisibility(true);
 
-            if (bHitBySapCenter)
-            {
-                // FireDestination의 스크린 좌표 위치를 구한다
-                FVector2D screenPos;
-                APlayerController* pc = Cast<APlayerController>(GetController());
-                // 마지막 true : DPI Scaling을 무시하겠다
-                bool bProjected = UGameplayStatics::ProjectWorldToScreen(pc, FireDestination, screenPos, true);
+            // Sap Center의 위치를 가져온다
+            //FVector sapCenterLocation;
+            //TArray<UActorComponent*> components = hitResult.GetActor()->GetComponentsByTag(USphereComponent::StaticClass(), FName("SapCenter"));
+            //for (UActorComponent* c : components)
+            //{
+            //    USphereComponent* sapCenter = Cast<USphereComponent>(c);
+            //    if(sapCenter) sapCenterLocation = sapCenter->GetComponentLocation() + sapCenter->GetUpVector() * 10;
+            //    // 10 : SapCenter의 반지름 길이
+            //}
 
-                if (bProjected)
-                {
-                    // LockedCrossHair의 위치를 FireDestination의 스크린 좌표 위치로 갱신해준다
-                    LockedCrossshairUI->UpdateCrosshairPosition(screenPos);
-                }
+            FVector sapCenterLocation;
+            USphereComponent* sapFull = Cast<USphereComponent>(hitResult.GetComponent());
+            if (sapFull)
+            {
+                sapCenterLocation = sapFull->GetComponentLocation() + sapFull->GetUpVector() * sapFull->GetScaledSphereRadius();
             }
+
+            // Sap Center의 스크린 좌표 위치를 구한다
+            FVector2D screenPos;
+            APlayerController* pc = Cast<APlayerController>(GetController());
+            // 마지막 true : DPI Scaling을 무시하겠다
+            bool bProjected = UWidgetLayoutLibrary::ProjectWorldLocationToWidgetPosition(pc, sapCenterLocation, screenPos, false);
+
+            if (bProjected)
+            {
+                // LockedCrossHair의 위치를 FireDestination의 스크린 좌표 위치로 갱신해준다
+                LockedCrossshairUI->UpdateCrosshairPosition(screenPos);
+                //UE_LOG(LogTemp, Warning, TEXT("---screenPos : %s"), *screenPos.ToString());
+            }
+        }
+        else
+        {
+            SetLockedCrosshairVisibility(false);
+            SetUnlockedCrosshairVisibility(true);
         }
     }
     else
@@ -388,9 +412,31 @@ void ACPlayer::AttachGun()
 
 void ACPlayer::DoFire()
 {
-    if(!bCanAim) return;
+    // Aim 모드가 아니거나, 총알이 전부 소진되었거나, Fire 중이라면
+    // MAY
+    if(!bCanAim || CurrentBulletCount == 0 || bIsInFireDelayTime) return;
+    //// CODY
+    //if (!bCanAim || CurrentSapAmout <= 0 || bIsInFireDelayTime) return;
 
     UE_LOG(LogTemp, Error, TEXT(">>>>> Fire Input Entered <<<<<"));
-
+    // MAY
+    CurrentBulletCount--;
     Gun->FireBullet(FireDestination);
+    bIsInFireDelayTime = true;
+    UE_LOG(LogTemp, Error, TEXT(">>> Current Bullet : %d"), CurrentBulletCount);
+
+    // Fire Delay Time 동안에는 Fire 불가
+    FTimerHandle fireDelayTimer;
+    auto fireDelayLambda = [&]() { bIsInFireDelayTime = false; };
+    GetWorld()->GetTimerManager().SetTimer(fireDelayTimer, fireDelayLambda, FireDelayTime, false);
+
+    // MAY
+    // 일정 시간이 지나면 Ammo 자동 충전
+    FTimerHandle chargeAmmoTimer;
+    auto chargeAmmoLambda = [&]() {
+            if(CurrentBulletCount >= MaxBulletCount) return;
+            CurrentBulletCount++;
+            UE_LOG(LogTemp, Error, TEXT(">>> Current Bullet : %d"), CurrentBulletCount);
+        };
+    GetWorld()->GetTimerManager().SetTimer(chargeAmmoTimer, chargeAmmoLambda, ChargeAmmoTime, false);
 }

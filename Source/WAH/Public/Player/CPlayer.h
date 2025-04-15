@@ -20,12 +20,12 @@ protected:
 
 #pragma region Player State
 protected:
-    int32 HP = 100;
+    int32 MaxHP = 12;
+    int32 HP = MaxHP;
     bool bIsDamaged = false;
     bool bIsDead = false;
 
-    //int32 MaxBulletCount = 3;   // for May
-    //float MaxSapAmount = 100.f; // for Cody
+    float DamageDurationTime = 10.f;
 
     void OnDamaged(int32 InDamage);
     void OnDead();
@@ -91,10 +91,10 @@ private:
 
     // Speed
     UPROPERTY(EditDefaultsOnly, Category = Move)
-    float SpeedJog = 600.f;
+    float SpeedJog = 500.f;
 
     UPROPERTY(EditDefaultsOnly, Category = Move)
-    float SpeedRun = 900.f;
+    float SpeedRun = 800.f;
 
     void DoMove(const struct FInputActionValue& InValue);
 
@@ -142,6 +142,7 @@ private:
     - 카메라 위치가 바뀐다 - Camera / Camera Boom의 Location이 바뀌도록 구현
     - damage 상태면 안보임
     - Sphere Trace를 진행한다
+    - 기존 Speed에서 일정 Speed만큼 느려진다
 
     여기서부터 May랑 Cody가 다름
     - 타겟에 닿으면 활성화 AimedCrosshairUI가 뜸
@@ -192,7 +193,7 @@ private:
 
     // Sphere Trace
     UPROPERTY(EditDefaultsOnly, Category = "Aim|SphereTrace")
-    float SphereTraceDistance = 500.f;
+    float SphereTraceDistance = 10000.f;
 
     UPROPERTY(EditDefaultsOnly, Category = "Aim|SphereTrace")
     float SphereTraceRadius = 10.f;
@@ -227,6 +228,24 @@ private:
 #pragma region Fire
     UPROPERTY(EditDefaultsOnly, Category = Input)
     class UInputAction* IA_Fire;
+
+    // MAY
+    int32 MaxBulletCount = 3;
+    int32 CurrentBulletCount = MaxBulletCount;
+
+    // CODY
+    float MaxSapAmount = 1;
+    float CurrentSapAmout = MaxSapAmount;
+
+    bool bIsInFireDelayTime = false;
+
+    UPROPERTY(EditDefaultsOnly, Category = Fire)
+    float FireDelayTime = 1.0f;
+
+    // MAY
+    // MUST ChargeAmmoTime < FireDelayTime
+    UPROPERTY(EditDefaultsOnly, Category = Fire)
+    float ChargeAmmoTime = 3.5f;
 
     void DoFire();
 #pragma endregion

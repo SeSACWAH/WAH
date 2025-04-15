@@ -5,6 +5,7 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
 
+
 void UCLockedCrossHairUI::UpdateCrosshairPosition(FVector2D InPosition)
 {
     UCanvasPanelSlot* canvasSlot = Cast<UCanvasPanelSlot>(CrosshairLocked->Slot);
