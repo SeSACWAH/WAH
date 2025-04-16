@@ -64,7 +64,7 @@ public:
 	float CurChargeTime = 0.0f;
 
 	UPROPERTY(EditAnywhere, Category = FSM)
-	float ChargeCurve = 0.003f;
+	float ChargeCurve = 0.05f;
 
 	UPROPERTY(EditAnywhere, Category = FSM)
 	float ChargeSpeed = 500;
