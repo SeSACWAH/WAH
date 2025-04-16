@@ -21,7 +21,8 @@ ACGiantBeetle::ACGiantBeetle()
 
 	AttackBox = CreateDefaultSubobject<UBoxComponent>(TEXT("AttackBox"));
 	AttackBox->SetupAttachment(RootComponent);
-	AttackBox->SetVisibility(false);
+	//AttackBox->SetVisibility(false);
+	AttackBox->SetCollisionProfileName(TEXT("AttackBox"));
 	AttackBox->OnComponentBeginOverlap.AddDynamic(this, &ACGiantBeetle::OnAttackBoxOverlap);
 }
 
@@ -44,7 +45,9 @@ void ACGiantBeetle::OnAttackBoxOverlap(UPrimitiveComponent* OverlappedComponent,
 	auto player = Cast<ACPlayer>(OtherActor);
 	if (player)
 	{
-		
+		UE_LOG(LogTemp, Warning, TEXT("BOverLap!"));
+		player->OnDamaged(12);
+		bKill = true;
 	}
 }
 
