@@ -73,6 +73,7 @@ void UCGiantBeetleFSM::IdleState()
 void UCGiantBeetleFSM::RetargetState()
 {
 	Target = Target == Player1 ? Player2 : Player1;
+	if(Target->GetIsDead()) Target = Target == Player1 ? Player2 : Player1;
 	TargetLoc = Target->GetActorLocation() + Me->GetActorForwardVector() * 100;
 	FRotator rot = UKismetMathLibrary::FindLookAtRotation(Me->GetActorLocation(),Target->GetActorLocation());
 	rot.Pitch = 0;
@@ -128,7 +129,7 @@ void UCGiantBeetleFSM::RetargetState()
 void UCGiantBeetleFSM::ChargeState()
 {
 	// 타겟이 죽어있으면 Retarget
-
+	if(Target->GetIsDead()) mState = EBeetleState::Retarget;
 	// 돌진
 	FVector curTargetLoc = Target->GetActorLocation();
 	FVector curPos = Me->GetActorLocation();
@@ -138,7 +139,7 @@ void UCGiantBeetleFSM::ChargeState()
 	FVector crossRes = FVector::CrossProduct( curTargetLoc - curPos , vel);
 	float checkRight = FVector::DotProduct(Me->GetActorUpVector(),crossRes);
 	// 어텍박스 활성화
-	Me->AttackBox->SetVisibility(true);
+	Me->AttackBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	
 	//// lerp 직선이동
 	//curPos = FMath::Lerp(curPos, TargetLoc, 1 * GetWorld()->DeltaTimeSeconds);
@@ -179,7 +180,7 @@ void UCGiantBeetleFSM::ChargeState()
 		if (!Me->bKill) Stomp();
 		mState = EBeetleState::Idle;
 		ChargeCnt++;
-		Me->AttackBox->SetVisibility(false);
+		Me->AttackBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		Me->bKill = false;
 	}
 }

@@ -23,6 +23,7 @@ ACGiantBeetle::ACGiantBeetle()
 	AttackBox->SetupAttachment(RootComponent);
 	//AttackBox->SetVisibility(false);
 	AttackBox->SetCollisionProfileName(TEXT("AttackBox"));
+	AttackBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	AttackBox->OnComponentBeginOverlap.AddDynamic(this, &ACGiantBeetle::OnAttackBoxOverlap);
 }
 
