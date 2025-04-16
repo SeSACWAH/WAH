@@ -28,12 +28,31 @@ protected:
 
     float DamageDurationTime = 10.f;
     float RecoverTime = 0.2f;
-
+    
+    float DebugReviveTime = 0;
     float CurrentReviveTime = 0;
+    UPROPERTY(EditDefaultsOnly, Category = Revival)
     float RevivalTime = 7.f;
+    UPROPERTY(EditDefaultsOnly, Category = Revival)
+    int32 ReviveBoostAmount = 10;
+
+    UPROPERTY(EditDefaultsOnly, Category = Input)
+    class UInputAction* IA_Revival;
+
+    // TEST
+    UPROPERTY(EditDefaultsOnly, Category = Input)
+    class UInputAction* IA_TestDamage;
+    UPROPERTY(EditDefaultsOnly, Category = Input)
+    class UInputAction* IA_TestRevival;
+
+    void TestDamage(const struct FInputActionValue& InValue);
+    void TestRevival(const struct FInputActionValue& InValue);
+
+    bool bIsRevivalInputEntered = false;
 
     void RecoverHP();
     void OnDead();
+    void RevivalInputEntered(const struct FInputActionValue& InValue);
     void OnRevive(float InDeltaTime);
 public:
     void OnDamaged(int32 InDamage);
@@ -156,10 +175,9 @@ private:
     - 카메라 위치가 바뀐다 - Camera / Camera Boom의 Location이 바뀌도록 구현
     - damage 상태면 안보임
     - Sphere Trace를 진행한다
-    - 기존 Speed에서 일정 Speed만큼 느려진다
 
     여기서부터 May랑 Cody가 다름
-    - 타겟에 닿으면 활성화 AimedCrosshairUI가 뜸
+    - 상호작용 가능한 물체에 Sphere Trace로 hit가 되면 활성화 - AimedCrosshairUI가 뜸
         - UnlockedCrosshairUI->SetVisibility(false)
         - LockedCrossshairUI->SetVisibility(true)
     - 일정 범위 안에 들어왔으면 Aim이 활성화된다

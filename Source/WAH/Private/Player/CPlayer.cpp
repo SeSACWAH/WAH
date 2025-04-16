@@ -74,7 +74,15 @@ ACPlayer::ACPlayer()
     ConstructorHelpers::FObjectFinder<UInputAction> tmpIAFire(TEXT("/Script/EnhancedInput.InputAction'/Game/DYL/Inputs/IA_Fire.IA_Fire'"));
     if(tmpIAFire.Succeeded()) IA_Fire = tmpIAFire.Object;
 
-    /* Gun */
+    ConstructorHelpers::FObjectFinder<UInputAction> tmpIARevival(TEXT("/Script/EnhancedInput.InputAction'/Game/DYL/Inputs/IA_Revival.IA_Revival'"));
+    if (tmpIARevival.Succeeded()) IA_Revival = tmpIARevival.Object;
+
+    // TEST
+    ConstructorHelpers::FObjectFinder<UInputAction> tmpTestD(TEXT("/Script/EnhancedInput.InputAction'/Game/DYL/Inputs/IA_TestDamage.IA_TestDamage'"));
+    if (tmpTestD.Succeeded()) IA_TestDamage = tmpTestD.Object;
+
+    ConstructorHelpers::FObjectFinder<UInputAction> tmpTestR(TEXT("/Script/EnhancedInput.InputAction'/Game/DYL/Inputs/IA_TestRevival.IA_TestRevival'"));
+    if (tmpTestR.Succeeded()) IA_TestRevival = tmpTestR.Object;
 }
 
 void ACPlayer::BeginPlay()
@@ -87,29 +95,32 @@ void ACPlayer::BeginPlay()
     // Gun
     AttachGun();
 
-    // Damage Recover Test
-    FTimerHandle testGetDamage;
-    auto lambda1 = [&]()
-        {
-            UE_LOG(LogTemp, Warning, TEXT("[DAMAGE TEST] DAMAGED!!! Current HP : %d"), 6);
-            OnDamaged(6);
-        };
-    GetWorld()->GetTimerManager().SetTimer(testGetDamage, lambda1, 3.f, false);
-
-    //FTimerHandle damageTimer;
-    //auto lambda2 = [&]() {
-    //    bIsDamaged = false;
-    //    RecoverHP();
+    //// Damage Recover Test
+    //FTimerHandle testGetDamage;
+    //auto lambda1 = [&]()
+    //    {
+    //        UE_LOG(LogTemp, Warning, TEXT("[DAMAGE TEST] DAMAGED!!! Current HP : %d"), 6);
+    //        OnDamaged(6);
     //    };
-    //GetWorld()->GetTimerManager().SetTimer(damageTimer, lambda2, DamageDurationTime, false);
+    //GetWorld()->GetTimerManager().SetTimer(testGetDamage, lambda1, 3.f, false);
 
-    FTimerHandle testDead;
-    auto lambda3 = [&]()
-        {
-            UE_LOG(LogTemp, Warning, TEXT("[DEAD TEST] DEAD!!! Current HP : %d"), 0);
-            OnDamaged(12);
-        };
-    GetWorld()->GetTimerManager().SetTimer(testDead, lambda3, 20.f, false);
+    //// Dead Test
+    //FTimerHandle testDead;
+    //auto lambda2 = [&]()
+    //    {
+    //        UE_LOG(LogTemp, Warning, TEXT("[DEAD TEST] DEAD!!! Current HP : %d"), 0);
+    //        OnDamaged(12);
+    //    };
+    //GetWorld()->GetTimerManager().SetTimer(testDead, lambda2, 20.f, false);
+
+    //// Revival Input Test
+    //FTimerHandle testRevival;
+    //auto lambda3 = [&]()
+    //    {
+    //        UE_LOG(LogTemp, Warning, TEXT("[REVIVAL TEST] DEAD!!! Current HP : %d"), 0);
+    //        OnDamaged(12);
+    //    };
+    //GetWorld()->GetTimerManager().SetTimer(testRevival, lambda3, 45.f, false);
 }
 
 void ACPlayer::Tick(float DeltaTime)
@@ -153,6 +164,11 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
         inputSystem->BindAction(IA_Aim, ETriggerEvent::Triggered, this, &ACPlayer::TriggerAim);
         inputSystem->BindAction(IA_Aim, ETriggerEvent::Completed, this, &ACPlayer::CompleteAim);
         inputSystem->BindAction(IA_Fire, ETriggerEvent::Started, this, &ACPlayer::DoFire);
+        inputSystem->BindAction(IA_Revival, ETriggerEvent::Started, this, &ACPlayer::RevivalInputEntered);
+
+        // TEST
+        inputSystem->BindAction(IA_TestDamage, ETriggerEvent::Started, this, &ACPlayer::TestDamage);
+        inputSystem->BindAction(IA_TestRevival, ETriggerEvent::Started, this, &ACPlayer::TestRevival);
     }
 }
 
@@ -169,6 +185,18 @@ void ACPlayer::OnDamaged(int32 InDamage)
             RecoverHP();
         };
     GetWorld()->GetTimerManager().SetTimer(damageTimer, lambda, DamageDurationTime, false);
+}
+
+void ACPlayer::TestDamage(const FInputActionValue& InValue)
+{
+    UE_LOG(LogTemp, Warning, TEXT("[DAMAGE TEST] DAMAGED!!! Current HP : %d"), 6);
+    OnDamaged(6);
+}
+
+void ACPlayer::TestRevival(const FInputActionValue& InValue)
+{
+    UE_LOG(LogTemp, Warning, TEXT("[REVIVAL TEST] DEAD!!! Current HP : %d"), 0);
+    OnDamaged(12);
 }
 
 void ACPlayer::RecoverHP()
@@ -207,14 +235,26 @@ void ACPlayer::OnDead()
     bIsReviving = true;
     // 부활 UI가 뜬다
     // E 버튼을 누르면 부활하는데 걸리는 시간이 줄어든다
+}
 
+void ACPlayer::RevivalInputEntered(const FInputActionValue& InValue)
+{
+    if(bIsReviving) bIsRevivalInputEntered = true;
 }
 
 void ACPlayer::OnRevive(float InDeltaTime)
 {
     if (CurrentReviveTime < RevivalTime)
     {
-        CurrentReviveTime += InDeltaTime;
+        if (bIsRevivalInputEntered)
+        {
+            UE_LOG(LogTemp, Warning, TEXT(">>>>> Revival Input Boost <<<"));
+            CurrentReviveTime += InDeltaTime * ReviveBoostAmount;
+            bIsRevivalInputEntered = false;
+        }
+        else CurrentReviveTime += InDeltaTime;
+
+        DebugReviveTime += InDeltaTime;
     }
     else
     {
@@ -229,9 +269,12 @@ void ACPlayer::OnRevive(float InDeltaTime)
         // 죽음 및 부활 관련 변수들 초기화
         bIsReviving = false;
         bIsDead = false;
+        HP = MaxHP;
         //일정 시간동안 Enemy랑 충돌해도 무적 상태가 되게 Collision 설정해주고
         //일정 시간 끝나면 원래 Collision 상태로 돌아오도록
+        UE_LOG(LogTemp, Warning, TEXT("----- REVIVAl COMPLETE : %f / %f (Time Spent / Time Max) -----"), DebugReviveTime, RevivalTime);
         CurrentReviveTime = 0;
+        DebugReviveTime = 0;
     }
 }
 
