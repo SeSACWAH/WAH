@@ -3,6 +3,7 @@
 
 #include "enemy/CHollowCylinder.h"
 #include "../../../../Plugins/Runtime/ProceduralMeshComponent/Source/ProceduralMeshComponent/Public/ProceduralMeshComponent.h"
+#include "Player/CPlayer.h"
 
 
 
@@ -14,6 +15,9 @@ ACHollowCylinder::ACHollowCylinder()
 
 	ProceduralMeshComp = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("ProceduralMeshComp"));
 	SetRootComponent(ProceduralMeshComp);
+    ProceduralMeshComp->SetCollisionProfileName(TEXT("AttackBox"));
+
+    ProceduralMeshComp->OnComponentBeginOverlap.AddDynamic(this, &ACHollowCylinder::OnHollowOverlap);
 
 }
 
@@ -84,5 +88,15 @@ void ACHollowCylinder::GenerateCylinder()
     }
 
     ProceduralMeshComp->CreateMeshSection(0, Vertices, Triangles, TArray<FVector>(), TArray<FVector2D>(), TArray<FColor>(), TArray<FProcMeshTangent>(), true);
+}
+
+void ACHollowCylinder::OnHollowOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+    auto player = Cast<ACPlayer>(OtherActor);
+    if (player)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("HOverLap!"));
+        player->OnDamaged(6);
+    }
 }
 

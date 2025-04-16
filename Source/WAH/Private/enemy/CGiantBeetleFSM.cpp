@@ -84,15 +84,15 @@ void UCGiantBeetleFSM::RetargetState()
 	{
 		if (Me->CurHP == Me->MaxHP)
 		{
-			JumpStartloc = Me->GetActorLocation();
-			JumpEndloc = Target->GetActorLocation();
-			FVector jumpDir = JumpEndloc - JumpStartloc;
-			jumpDir.Z = 0;
-			JumpVelocity = jumpDir.GetSafeNormal() * JumpSpeed;
-			JumpTotTime = jumpDir.Length() / JumpSpeed;
-			JumpVelocityZ = JumpTotTime * JumpGravity / 2;
-			//mState = EBeetleState::Charge;
-			mState = EBeetleState::TripleJump;
+			//JumpStartloc = Me->GetActorLocation();
+			//JumpEndloc = Target->GetActorLocation();
+			//FVector jumpDir = JumpEndloc - JumpStartloc;
+			//jumpDir.Z = 0;
+			//JumpVelocity = jumpDir.GetSafeNormal() * JumpSpeed;
+			//JumpTotTime = jumpDir.Length() / JumpSpeed;
+			//JumpVelocityZ = JumpTotTime * JumpGravity / 2;
+			//mState = EBeetleState::TripleJump;
+			mState = EBeetleState::Charge;
 
 		}
 		else
@@ -143,12 +143,10 @@ void UCGiantBeetleFSM::ChargeState()
 	//// lerp 직선이동
 	//curPos = FMath::Lerp(curPos, TargetLoc, 1 * GetWorld()->DeltaTimeSeconds);
 	//Me->SetActorLocation(curPos);
-	
-	UE_LOG(LogTemp, Warning, TEXT("%s, %f, %f"), *crossRes.ToString(), dotRes, checkRight);
 
 	// 약간 커브이동
 	FRotator newRot = Me->GetActorRotation();
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *Me->GetActorRightVector().Rotation().ToString());
+
 	if (dotRes >= 0)
 	{
 		if ( crossRes.Z >10)
@@ -182,6 +180,7 @@ void UCGiantBeetleFSM::ChargeState()
 		mState = EBeetleState::Idle;
 		ChargeCnt++;
 		Me->AttackBox->SetVisibility(false);
+		Me->bKill = false;
 	}
 }
 
