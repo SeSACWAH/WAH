@@ -184,18 +184,27 @@ void ACPlayer::OnDamaged(int32 InDamage)
         return;
     }
 
+    if(bIsDead) return;
+
+    UE_LOG(LogTemp, Error, TEXT("###### PLAYER GET DAMAGE ######"));
+
     bIsDamaged = true;
     HP -= InDamage;
-    if(HP <= 0) OnDead();
+    if(HP <= 0)
+    {
+        OnDead();
+        return;
+    }
 
+    //RecoverHP();
     // 일정 시간이 지나면 회복한다
-    FTimerHandle damageTimer;
+    //FTimerHandle damageTimer;
     auto lambda = [&]() {
-            bIsDamaged = false;
+        UE_LOG(LogTemp, Warning, TEXT(">>>>>> RECOVER START"));
+            GetWorld()->GetTimerManager().ClearTimer(DamageTimer);
             RecoverHP();
-            GetWorld()->GetTimerManager().ClearTimer(damageTimer);
         };
-    GetWorld()->GetTimerManager().SetTimer(damageTimer, lambda, DamageDurationTime, false);
+    GetWorld()->GetTimerManager().SetTimer(DamageTimer, lambda, DamageDurationTime, false);
 }
 
 void ACPlayer::TestDamage(const FInputActionValue& InValue)
@@ -212,7 +221,7 @@ void ACPlayer::TestRevival(const FInputActionValue& InValue)
 
 void ACPlayer::RecoverHP()
 {
-    FTimerHandle recoverTimer;
+    //FTimerHandle recoverTimer;
     auto lambda = [&](){
         if(HP < MaxHP)
         {
@@ -221,10 +230,11 @@ void ACPlayer::RecoverHP()
         }
         else
         {
-            GetWorld()->GetTimerManager().ClearTimer(recoverTimer);
+            bIsDamaged = false;
+            GetWorld()->GetTimerManager().ClearTimer(RecoverTimer);
         }
             };
-    GetWorld()->GetTimerManager().SetTimer(recoverTimer, lambda, RecoverTime, true);
+    GetWorld()->GetTimerManager().SetTimer(RecoverTimer, lambda, RecoverTime, true);
 }
 
 void ACPlayer::OnDead()
@@ -280,6 +290,7 @@ void ACPlayer::OnRevive(float InDeltaTime)
         // 죽음 및 부활 관련 변수들 초기화
         bIsReviving = false;
         bIsDead = false;
+        bIsDamaged = false;
         HP = MaxHP;
         //일정 시간동안 Enemy랑 충돌해도 무적 상태가 되게 Collision 설정해주고
         //일정 시간 끝나면 원래 Collision 상태로 돌아오도록
@@ -447,7 +458,7 @@ float ACPlayer::EaseOutSine(float InRatio)
 
 void ACPlayer::StartAim(const FInputActionValue& InValue)
 {
-    if (bIsDead || bIsReviving) return;
+    if (bIsDead || bIsDamaged || bIsReviving) return;
 
     bCanAim = true;
 

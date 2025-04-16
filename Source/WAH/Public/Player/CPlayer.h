@@ -20,6 +20,10 @@ protected:
 
 #pragma region Player State
 protected:
+    FTimerHandle DamageTimer;
+    FTimerHandle RecoverTimer;
+
+
     int32 MaxHP = 12;
     int32 HP = MaxHP;
 
