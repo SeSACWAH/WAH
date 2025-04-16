@@ -136,6 +136,9 @@ void ACPlayer::Tick(float DeltaTime)
 
     // Revive
     if(bIsReviving) OnRevive(DeltaTime);
+
+    // God Mode
+    if(bIsGodMode) GodMode(DeltaTime);
 }
 
 void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -174,6 +177,13 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void ACPlayer::OnDamaged(int32 InDamage)
 {
+    // 公利 惑怕老 锭绰 单固瘤 贸府 X
+    if (bIsGodMode)
+    {
+        UE_LOG(LogTemp, Error, TEXT("###### GOOOOOOOOD MOOOOOOOD ######"));
+        return;
+    }
+
     bIsDamaged = true;
     HP -= InDamage;
     if(HP <= 0) OnDead();
@@ -183,6 +193,7 @@ void ACPlayer::OnDamaged(int32 InDamage)
     auto lambda = [&]() {
             bIsDamaged = false;
             RecoverHP();
+            GetWorld()->GetTimerManager().ClearTimer(damageTimer);
         };
     GetWorld()->GetTimerManager().SetTimer(damageTimer, lambda, DamageDurationTime, false);
 }
@@ -275,6 +286,17 @@ void ACPlayer::OnRevive(float InDeltaTime)
         UE_LOG(LogTemp, Warning, TEXT("----- REVIVAl COMPLETE : %f / %f (Time Spent / Time Max) -----"), DebugReviveTime, RevivalTime);
         CurrentReviveTime = 0;
         DebugReviveTime = 0;
+        bIsGodMode = true;
+    }
+}
+
+void ACPlayer::GodMode(float InDeltaTime)
+{
+    if(CurrentGodModeTime < GodModeTime) CurrentGodModeTime += InDeltaTime;
+    else
+    {
+        CurrentGodModeTime = 0;
+        bIsGodMode = false;
     }
 }
 

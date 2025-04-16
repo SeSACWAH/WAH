@@ -22,39 +22,48 @@ protected:
 protected:
     int32 MaxHP = 12;
     int32 HP = MaxHP;
+
     bool bIsDamaged = false;
     bool bIsDead = false;
     bool bIsReviving = false;
+    bool bIsRevivalInputEntered = false;
+    bool bIsGodMode = false;
 
+    UPROPERTY(EditDefaultsOnly, Category = Revival)
     float DamageDurationTime = 10.f;
+    UPROPERTY(EditDefaultsOnly, Category = Revival)
     float RecoverTime = 0.2f;
-    
-    float DebugReviveTime = 0;
-    float CurrentReviveTime = 0;
+
     UPROPERTY(EditDefaultsOnly, Category = Revival)
     float RevivalTime = 7.f;
     UPROPERTY(EditDefaultsOnly, Category = Revival)
     int32 ReviveBoostAmount = 10;
+    float CurrentReviveTime = 0;
+
+    UPROPERTY(EditDefaultsOnly, Category = Revival)
+    float GodModeTime = 5.f;
+    UPROPERTY(EditDefaultsOnly, Category = Revival)
+    float CurrentGodModeTime = 0;
 
     UPROPERTY(EditDefaultsOnly, Category = Input)
     class UInputAction* IA_Revival;
 
     // TEST
+    float DebugReviveTime = 0;
     UPROPERTY(EditDefaultsOnly, Category = Input)
     class UInputAction* IA_TestDamage;
     UPROPERTY(EditDefaultsOnly, Category = Input)
     class UInputAction* IA_TestRevival;
-
     void TestDamage(const struct FInputActionValue& InValue);
     void TestRevival(const struct FInputActionValue& InValue);
-
-    bool bIsRevivalInputEntered = false;
 
     void RecoverHP();
     void OnDead();
     void RevivalInputEntered(const struct FInputActionValue& InValue);
     void OnRevive(float InDeltaTime);
+    void GodMode(float InDeltaTime);
 public:
+    bool GetIsDead(){ return bIsDead; }
     void OnDamaged(int32 InDamage);
 #pragma endregion
 

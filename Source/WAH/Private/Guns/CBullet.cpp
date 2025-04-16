@@ -59,7 +59,7 @@ void ACBullet::DoMoveBullet(float InDeltaTime)
 	FVector direction = FireDestination - GetActorLocation();
 	SetActorLocation(GetActorLocation() + (direction.GetSafeNormal() * BulletSpeed) * InDeltaTime);
 	
-	if (FVector::Dist(GetActorLocation(), FireDestination) <= 50)
+	if (FVector::Dist(GetActorLocation(), FireDestination) <= 30)
 		CompleteMoveBullet(FireDestination);
 }
 
