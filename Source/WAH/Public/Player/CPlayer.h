@@ -52,15 +52,6 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = Input)
     class UInputAction* IA_Revival;
 
-    // TEST
-    float DebugReviveTime = 0;
-    UPROPERTY(EditDefaultsOnly, Category = Input)
-    class UInputAction* IA_TestDamage;
-    UPROPERTY(EditDefaultsOnly, Category = Input)
-    class UInputAction* IA_TestRevival;
-    void TestDamage(const struct FInputActionValue& InValue);
-    void TestRevival(const struct FInputActionValue& InValue);
-
     void RecoverHP();
     void OnDead();
     void RevivalInputEntered(const struct FInputActionValue& InValue);
@@ -86,7 +77,7 @@ protected:
 #pragma endregion
 
 #pragma region Camera
-private:
+protected:
     UPROPERTY(VisibleAnywhere, Category = Camera)
     class UCameraComponent* PlayerCamear;
 
@@ -100,7 +91,6 @@ private:
 #pragma endregion
 
 #pragma region IMC
-private:
     UPROPERTY(EditDefaultsOnly, Category = Input)
     class UInputMappingContext* IMC_Player;
 #pragma endregion
@@ -256,7 +246,7 @@ private:
 
     void StartAim(const FInputActionValue& InValue);
     void AdjustTargetArmLocation(float InDeltaTime);
-    void TriggerAim(const FInputActionValue& InValue);
+    virtual void TriggerAim(const FInputActionValue& InValue);
     void CompleteAim(const FInputActionValue& InValue);
 #pragma endregion
 
@@ -274,25 +264,25 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = Input)
     class UInputAction* IA_Fire;
 
-    // MAY
-    int32 MaxBulletCount = 3;
-    int32 CurrentBulletCount = MaxBulletCount;
+    //// MAY
+    //int32 MaxBulletCount = 3;
+    //int32 CurrentBulletCount = MaxBulletCount;
 
     // CODY
     float MaxSapAmount = 1;
     float CurrentSapAmout = MaxSapAmount;
 
-    bool bIsInFireDelayTime = false;
+    //bool bIsInFireDelayTime = false;
 
-    UPROPERTY(EditDefaultsOnly, Category = Fire)
-    float FireDelayTime = 1.0f;
+    //UPROPERTY(EditDefaultsOnly, Category = Fire)
+    //float FireDelayTime = 1.0f;
 
-    // MAY
-    // MUST ChargeAmmoTime < FireDelayTime
-    UPROPERTY(EditDefaultsOnly, Category = Fire)
-    float ChargeAmmoTime = 3.5f;
+    //// MAY
+    //// MUST ChargeAmmoTime < FireDelayTime
+    //UPROPERTY(EditDefaultsOnly, Category = Fire)
+    //float ChargeAmmoTime = 3.5f;
 
-    void DoFire();
+    virtual void DoFire();
 #pragma endregion
 
 };

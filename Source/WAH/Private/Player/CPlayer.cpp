@@ -46,7 +46,7 @@ ACPlayer::ACPlayer()
     PlayerCamear->bUsePawnControlRotation = false;
 
     /* Collision */
-
+    GetCapsuleComponent()->SetCollisionProfileName(FName("Player"));
 
     /* IMC */
     ConstructorHelpers::FObjectFinder<UInputMappingContext> tmpIMC(TEXT("/Script/EnhancedInput.InputMappingContext'/Game/DYL/Inputs/IMC_Player.IMC_Player'"));
@@ -76,51 +76,16 @@ ACPlayer::ACPlayer()
 
     ConstructorHelpers::FObjectFinder<UInputAction> tmpIARevival(TEXT("/Script/EnhancedInput.InputAction'/Game/DYL/Inputs/IA_Revival.IA_Revival'"));
     if (tmpIARevival.Succeeded()) IA_Revival = tmpIARevival.Object;
-
-    // TEST
-    ConstructorHelpers::FObjectFinder<UInputAction> tmpTestD(TEXT("/Script/EnhancedInput.InputAction'/Game/DYL/Inputs/IA_TestDamage.IA_TestDamage'"));
-    if (tmpTestD.Succeeded()) IA_TestDamage = tmpTestD.Object;
-
-    ConstructorHelpers::FObjectFinder<UInputAction> tmpTestR(TEXT("/Script/EnhancedInput.InputAction'/Game/DYL/Inputs/IA_TestRevival.IA_TestRevival'"));
-    if (tmpTestR.Succeeded()) IA_TestRevival = tmpTestR.Object;
 }
 
 void ACPlayer::BeginPlay()
 {
     Super::BeginPlay();
 
-    // Crosshair
+    // Override
     InitCrosshairWidgets();
-
-    // Gun
+    // Override
     AttachGun();
-
-    //// Damage Recover Test
-    //FTimerHandle testGetDamage;
-    //auto lambda1 = [&]()
-    //    {
-    //        UE_LOG(LogTemp, Warning, TEXT("[DAMAGE TEST] DAMAGED!!! Current HP : %d"), 6);
-    //        OnDamaged(6);
-    //    };
-    //GetWorld()->GetTimerManager().SetTimer(testGetDamage, lambda1, 3.f, false);
-
-    //// Dead Test
-    //FTimerHandle testDead;
-    //auto lambda2 = [&]()
-    //    {
-    //        UE_LOG(LogTemp, Warning, TEXT("[DEAD TEST] DEAD!!! Current HP : %d"), 0);
-    //        OnDamaged(12);
-    //    };
-    //GetWorld()->GetTimerManager().SetTimer(testDead, lambda2, 20.f, false);
-
-    //// Revival Input Test
-    //FTimerHandle testRevival;
-    //auto lambda3 = [&]()
-    //    {
-    //        UE_LOG(LogTemp, Warning, TEXT("[REVIVAL TEST] DEAD!!! Current HP : %d"), 0);
-    //        OnDamaged(12);
-    //    };
-    //GetWorld()->GetTimerManager().SetTimer(testRevival, lambda3, 45.f, false);
 }
 
 void ACPlayer::Tick(float DeltaTime)
@@ -168,25 +133,12 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
         inputSystem->BindAction(IA_Aim, ETriggerEvent::Completed, this, &ACPlayer::CompleteAim);
         inputSystem->BindAction(IA_Fire, ETriggerEvent::Started, this, &ACPlayer::DoFire);
         inputSystem->BindAction(IA_Revival, ETriggerEvent::Started, this, &ACPlayer::RevivalInputEntered);
-
-        // TEST
-        inputSystem->BindAction(IA_TestDamage, ETriggerEvent::Started, this, &ACPlayer::TestDamage);
-        inputSystem->BindAction(IA_TestRevival, ETriggerEvent::Started, this, &ACPlayer::TestRevival);
     }
 }
 
 void ACPlayer::OnDamaged(int32 InDamage)
 {
-    // 무적 상태일 때는 데미지 처리 X
-    if (bIsGodMode)
-    {
-        UE_LOG(LogTemp, Error, TEXT("###### GOOOOOOOOD MOOOOOOOD ######"));
-        return;
-    }
-
-    if(bIsDead) return;
-
-    UE_LOG(LogTemp, Error, TEXT("###### PLAYER GET DAMAGE ######"));
+    if (bIsGodMode || bIsDead) return;
 
     bIsDamaged = true;
     HP -= InDamage;
@@ -196,37 +148,19 @@ void ACPlayer::OnDamaged(int32 InDamage)
         return;
     }
 
-    //RecoverHP();
-    // 일정 시간이 지나면 회복한다
-    //FTimerHandle damageTimer;
     auto lambda = [&]() {
-        UE_LOG(LogTemp, Warning, TEXT(">>>>>> RECOVER START"));
             GetWorld()->GetTimerManager().ClearTimer(DamageTimer);
             RecoverHP();
         };
     GetWorld()->GetTimerManager().SetTimer(DamageTimer, lambda, DamageDurationTime, false);
 }
 
-void ACPlayer::TestDamage(const FInputActionValue& InValue)
-{
-    UE_LOG(LogTemp, Warning, TEXT("[DAMAGE TEST] DAMAGED!!! Current HP : %d"), 6);
-    OnDamaged(6);
-}
-
-void ACPlayer::TestRevival(const FInputActionValue& InValue)
-{
-    UE_LOG(LogTemp, Warning, TEXT("[REVIVAL TEST] DEAD!!! Current HP : %d"), 0);
-    OnDamaged(12);
-}
-
 void ACPlayer::RecoverHP()
 {
-    //FTimerHandle recoverTimer;
     auto lambda = [&](){
         if(HP < MaxHP)
         {
             HP++;
-            UE_LOG(LogTemp, Warning, TEXT("[Recover] Current HP : %d"), HP);
         }
         else
         {
@@ -241,21 +175,22 @@ void ACPlayer::OnDead()
 {
     bIsDead = true;
 
-    // Skeletal Mesh Visibility 꺼짐
     GetMesh()->SetVisibility(false);
-    // GunMesh의 Visibility 꺼짐
     Gun->GetGunMeshComp()->SetVisibility(false);
-    //Actor Location 위치 지하로 변경
     SetActorLocation(GetActorLocation() + -GetActorUpVector() * 100);
+
     // 죽음 FX의 Visibility를 켠다
 
     // 죽음 FX가 끝나면
+    
     // 화면 채도가 살짝 낮아진다
+    
     // 화면이 뿌얘진다
+    
     // 부활 타이머가 시작된다
     bIsReviving = true;
+
     // 부활 UI가 뜬다
-    // E 버튼을 누르면 부활하는데 걸리는 시간이 줄어든다
 }
 
 void ACPlayer::RevivalInputEntered(const FInputActionValue& InValue)
@@ -269,34 +204,26 @@ void ACPlayer::OnRevive(float InDeltaTime)
     {
         if (bIsRevivalInputEntered)
         {
-            UE_LOG(LogTemp, Warning, TEXT(">>>>> Revival Input Boost <<<"));
             CurrentReviveTime += InDeltaTime * ReviveBoostAmount;
             bIsRevivalInputEntered = false;
         }
         else CurrentReviveTime += InDeltaTime;
-
-        DebugReviveTime += InDeltaTime;
     }
     else
     {
-        //Skeletal Mesh Visibility 켜짐
         GetMesh()->SetVisibility(true);
-        // GunMesh의 Visibility 켜짐
         Gun->GetGunMeshComp()->SetVisibility(true);
         //등장 FX Visible 켜기
-        //원점에 스폰됨
+        
         SetActorLocation(FVector(0));
         SetActorRotation(FRotator(0, 180, 0));
-        // 죽음 및 부활 관련 변수들 초기화
+
         bIsReviving = false;
         bIsDead = false;
         bIsDamaged = false;
         HP = MaxHP;
-        //일정 시간동안 Enemy랑 충돌해도 무적 상태가 되게 Collision 설정해주고
-        //일정 시간 끝나면 원래 Collision 상태로 돌아오도록
-        UE_LOG(LogTemp, Warning, TEXT("----- REVIVAl COMPLETE : %f / %f (Time Spent / Time Max) -----"), DebugReviveTime, RevivalTime);
+
         CurrentReviveTime = 0;
-        DebugReviveTime = 0;
         bIsGodMode = true;
     }
 }
@@ -311,7 +238,6 @@ void ACPlayer::GodMode(float InDeltaTime)
     }
 }
 
-
 void ACPlayer::DoMove(const struct FInputActionValue& InValue)
 {
     if (bCanDash || bIsDead || bIsReviving) return;
@@ -325,13 +251,11 @@ void ACPlayer::DoTurn(const FInputActionValue& InValue)
 {
     FVector2d scale = InValue.Get<FVector2d>();
 
-    // 마우스 감도
     float mouseSensitivity = (bCanAim) ? MouseSensitivityAim : MouseSensitivityDefault;
 
-    // pitch : 회전 제한해줌
-    // 부활 중일 땐 조금만 회전하게
     float min = bIsReviving ? MinPitchRevival : MinPitchDefault;
     float max = bIsReviving ? MaxPitchRevival : MaxPitchDefault;
+
     float pitch = FMath::Clamp(GetController()->GetControlRotation().Pitch + scale.Y * mouseSensitivity, min, max);
     float yaw = GetController()->GetControlRotation().Yaw + scale.X * mouseSensitivity;
     float roll = GetController()->GetControlRotation().Roll* mouseSensitivity;
@@ -354,21 +278,16 @@ void ACPlayer::DoRun(const FInputActionValue& InValue)
         GetCharacterMovement()->MaxWalkSpeed = SpeedJog;
     else
         GetCharacterMovement()->MaxWalkSpeed = SpeedRun;
-
-    UE_LOG(LogTemp, Warning, TEXT("[Change Speed] Current Speed : %f"), GetCharacterMovement()->MaxWalkSpeed);
 }
 
 void ACPlayer::StartDash(const FInputActionValue& InValue)
 {
     if (bIsDead || bIsReviving) return;
-
-    // 이미 Dash 중이거나 Dash cool down 중이라면 아무 처리하지 않는다
     if (bCanDash || bCanResetDash) return;
 
     DashStartPos = GetActorLocation();
     DashEndPos = GetActorLocation() + GetActorForwardVector() * DashDistance;
 
-    // Dash가 시작되었음을 명시한다
     bCanDash = true;
 }
 
@@ -381,18 +300,10 @@ void ACPlayer::DoDash(float InDeltaTime)
 
     if (DashCurrentTime >= DashDurationTime)
     {
-        // 위치 보정
         SetActorLocation(DashEndPos);
-
-        UE_LOG(LogTemp, Log, TEXT(">>> Dash Complete"));
-
-        // Dash가 끝났음을 명시
         bCanDash = false;
         DashCurrentTime = 0;
-
-        // Dash CoolDown이 시작되었음을 명시
         bCanResetDash = true;
-        UE_LOG(LogTemp, Log, TEXT(">>> Dash Cool Down Start"));
     }
 }
 
@@ -402,11 +313,8 @@ void ACPlayer::ResetDash(float InDeltaTime)
 
     if (DashCurrentTime >= DashCoolDownTime)
     {
-        // Cool down이 끝났음을 명시
         bCanResetDash = false;
         DashCurrentTime = 0;
-
-        UE_LOG(LogTemp, Log, TEXT(">>> Dash Cool Down Complete"));
     }
 }
 
@@ -464,21 +372,15 @@ void ACPlayer::StartAim(const FInputActionValue& InValue)
 
     if (CameraBoom->GetComponentLocation() == CameraBoomLocationDefault) ZoomCurrentTime = 0;
 
-    // UnlockedCrosshairUI의 Visible 켜주기
     if (UnlockedCrossshairUI) SetUnlockedCrosshairVisibility(true);
 
-    // Player의 Move 방향으로 회전하도록 설정
     bUseControllerRotationYaw = true;
-
-    // CameraBoom Location 조정
     bCanZoom = true;
 }
 
 void ACPlayer::AdjustTargetArmLocation(float InDeltaTime)
 {
     //UE_LOG(LogTemp, Warning, TEXT(">>> Start Adjust Target Arm Location <<<"));
-
-    //ZoomCurrentTime += InDeltaTime;
     float ratio;
 
     if (bCanZoom) ZoomCurrentTime += InDeltaTime;
@@ -493,93 +395,73 @@ void ACPlayer::AdjustTargetArmLocation(float InDeltaTime)
 
 void ACPlayer::TriggerAim(const FInputActionValue& InValue)
 {
-    if (bIsDead || bIsReviving) return;
+    //if (bIsDead || bIsDamaged || bIsReviving) return;
 
-    FVector startPos = Gun->GetFirePosition();
-    FVector endPos = startPos + PlayerCamear->GetForwardVector() * SphereTraceDistance;
+    //FVector startPos = Gun->GetFirePosition();
+    //FVector endPos = startPos + PlayerCamear->GetForwardVector() * SphereTraceDistance;
 
-    FHitResult hitResult;
-    TArray<AActor*> actorsToIgnore;
-    actorsToIgnore.Add(this);
+    //FHitResult hitResult;
+    //TArray<AActor*> actorsToIgnore;
+    //actorsToIgnore.Add(this);
 
-    bool bHit = UKismetSystemLibrary::SphereTraceSingle(this, startPos, endPos, SphereTraceRadius, UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_GameTraceChannel6), false, actorsToIgnore, EDrawDebugTrace::ForDuration, hitResult, true, FColor::Purple, FColor::Orange, 0.3f);
-    
-    if (bHit)
-    {
-        FireDestination = hitResult.Location;
+    //bool bHit = UKismetSystemLibrary::SphereTraceSingle(this, startPos, endPos, SphereTraceRadius, UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_GameTraceChannel6), false, actorsToIgnore, EDrawDebugTrace::ForDuration, hitResult, true, FColor::Purple, FColor::Orange, 0.3f);
+    //
+    //if (bHit)
+    //{
+    //    FireDestination = hitResult.Location;
 
-        bool bHitBySap = hitResult.GetComponent()->ComponentHasTag(FName("Sap"));
-        //bool bHitBySapCenter = hitResult.GetComponent()->ComponentHasTag(FName("SapCenter"));
+    //    bool bHitBySap = hitResult.GetComponent()->ComponentHasTag(FName("Sap"));
 
-        //UE_LOG(LogTemp, Warning, TEXT("[HIT] bHitBySap : %d / bHitBySapCenter : %d"), bHitBySap, bHitBySapCenter);
+    //    //UE_LOG(LogTemp, Warning, TEXT("[HIT] bHitBySap : %d / bHitBySapCenter : %d"), bHitBySap, bHitBySapCenter);
 
-        // Sap이 들어있는 통에 닿았다면
-        if (bHitBySap)
-        {
-            // UnlockedCrosshair를 꺼준다
-            SetUnlockedCrosshairVisibility(false);
+    //    // Sap이 들어있는 통에 닿았다면
+    //    if (bHitBySap)
+    //    {
+    //        SetUnlockedCrosshairVisibility(false);
+    //        SetLockedCrosshairVisibility(true);
 
-            // LockedCrossHair를 켜준다
-            SetLockedCrosshairVisibility(true);
+    //        FVector sapCenterLocation;
+    //        USphereComponent* sapFull = Cast<USphereComponent>(hitResult.GetComponent());
+    //        if (sapFull)
+    //        {
+    //            sapCenterLocation = sapFull->GetComponentLocation() + sapFull->GetUpVector() * sapFull->GetScaledSphereRadius();
+    //            FireDestination = sapCenterLocation;
+    //            // Sap Center의 스크린 좌표 위치를 구한다
+    //            FVector2D screenPos;
+    //            APlayerController* pc = Cast<APlayerController>(GetController());
+    //            // 마지막 true : DPI Scaling을 무시하겠다
+    //            bool bProjected = UWidgetLayoutLibrary::ProjectWorldLocationToWidgetPosition(pc, sapCenterLocation, screenPos, false);
 
-            // Sap Center의 위치를 가져온다
-            //FVector sapCenterLocation;
-            //TArray<UActorComponent*> components = hitResult.GetActor()->GetComponentsByTag(USphereComponent::StaticClass(), FName("SapCenter"));
-            //for (UActorComponent* c : components)
-            //{
-            //    USphereComponent* sapCenter = Cast<USphereComponent>(c);
-            //    if(sapCenter) sapCenterLocation = sapCenter->GetComponentLocation() + sapCenter->GetUpVector() * 10;
-            //    // 10 : SapCenter의 반지름 길이
-            //}
+    //            if (bProjected)
+    //            {
+    //                // LockedCrossHair의 위치를 FireDestination의 스크린 좌표 위치로 갱신해준다
+    //                LockedCrossshairUI->UpdateCrosshairPosition(screenPos);
+    //            }
+    //        }
 
-            FVector sapCenterLocation;
-            USphereComponent* sapFull = Cast<USphereComponent>(hitResult.GetComponent());
-            if (sapFull)
-            {
-                sapCenterLocation = sapFull->GetComponentLocation() + sapFull->GetUpVector() * sapFull->GetScaledSphereRadius();
-                FireDestination = sapCenterLocation;
-                // Sap Center의 스크린 좌표 위치를 구한다
-                FVector2D screenPos;
-                APlayerController* pc = Cast<APlayerController>(GetController());
-                // 마지막 true : DPI Scaling을 무시하겠다
-                bool bProjected = UWidgetLayoutLibrary::ProjectWorldLocationToWidgetPosition(pc, sapCenterLocation, screenPos, false);
-
-                if (bProjected)
-                {
-                    // LockedCrossHair의 위치를 FireDestination의 스크린 좌표 위치로 갱신해준다
-                    LockedCrossshairUI->UpdateCrosshairPosition(screenPos);
-                    //UE_LOG(LogTemp, Warning, TEXT("---screenPos : %s"), *screenPos.ToString());
-                }
-            }
-
-        }
-        else
-        {
-            SetLockedCrosshairVisibility(false);
-            SetUnlockedCrosshairVisibility(true);
-        }
-    }
-    else
-    {
-        FireDestination = endPos;
-        SetLockedCrosshairVisibility(false);
-        SetUnlockedCrosshairVisibility(true);
-    }
+    //    }
+    //    else
+    //    {
+    //        SetLockedCrosshairVisibility(false);
+    //        SetUnlockedCrosshairVisibility(true);
+    //    }
+    //}
+    //else
+    //{
+    //    FireDestination = endPos;
+    //    SetLockedCrosshairVisibility(false);
+    //    SetUnlockedCrosshairVisibility(true);
+    //}
 }
 
 
 void ACPlayer::CompleteAim(const FInputActionValue& InValue)
 {
-    // UI들 Visible 꺼주기
     SetUnlockedCrosshairVisibility(false);
     SetLockedCrosshairVisibility(false);
 
-    // 마우스 커서 방향으로 회전하도록 설정
     bUseControllerRotationYaw = false;
-
-    // CameraBoom Location 조정
     bCanZoom = false;
-
     bCanAim = false;
 }
 
@@ -590,39 +472,39 @@ void ACPlayer::AttachGun()
     {
         Gun = GetWorld()->SpawnActor<ACGun>(GunBP);
         if(Gun) Gun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("Gun"));
-        UE_LOG(LogTemp, Error, TEXT(">>> Attach Gun Success"));
+        //UE_LOG(LogTemp, Error, TEXT(">>> Attach Gun Success"));
     }
 }
 
 void ACPlayer::DoFire()
 {
-    if (bIsDead || bIsReviving) return;
+    //if (bIsDead || bIsReviving) return;
 
-    // Aim 모드가 아니거나, 총알이 전부 소진되었거나, Fire 중이라면
-    // MAY
-    if(!bCanAim || CurrentBulletCount == 0 || bIsInFireDelayTime) return;
-    //// CODY
-    //if (!bCanAim || CurrentSapAmout <= 0 || bIsInFireDelayTime) return;
+    //// Aim 모드가 아니거나, 총알이 전부 소진되었거나, Fire 중이라면
+    //// MAY
+    //if(!bCanAim || CurrentBulletCount == 0 || bIsInFireDelayTime) return;
+    ////// CODY
+    ////if (!bCanAim || CurrentSapAmout <= 0 || bIsInFireDelayTime) return;
 
-    UE_LOG(LogTemp, Error, TEXT(">>>>> Fire Input Entered <<<<<"));
-    // MAY
-    CurrentBulletCount--;
-    Gun->FireBullet(FireDestination);
-    bIsInFireDelayTime = true;
-    UE_LOG(LogTemp, Error, TEXT(">>> Current Bullet : %d"), CurrentBulletCount);
+    //UE_LOG(LogTemp, Error, TEXT(">>>>> Fire Input Entered <<<<<"));
+    //// MAY
+    //CurrentBulletCount--;
+    //Gun->FireBullet(FireDestination);
+    //bIsInFireDelayTime = true;
+    //UE_LOG(LogTemp, Error, TEXT(">>> Current Bullet : %d"), CurrentBulletCount);
 
-    // Fire Delay Time 동안에는 Fire 불가
-    FTimerHandle fireDelayTimer;
-    auto fireDelayLambda = [&]() { bIsInFireDelayTime = false; };
-    GetWorld()->GetTimerManager().SetTimer(fireDelayTimer, fireDelayLambda, FireDelayTime, false);
+    //// Fire Delay Time 동안에는 Fire 불가
+    //FTimerHandle fireDelayTimer;
+    //auto fireDelayLambda = [&]() { bIsInFireDelayTime = false; };
+    //GetWorld()->GetTimerManager().SetTimer(fireDelayTimer, fireDelayLambda, FireDelayTime, false);
 
-    // MAY
-    // 일정 시간이 지나면 Ammo 자동 충전
-    FTimerHandle chargeAmmoTimer;
-    auto chargeAmmoLambda = [&]() {
-            if(CurrentBulletCount >= MaxBulletCount) return;
-            CurrentBulletCount++;
-            UE_LOG(LogTemp, Error, TEXT(">>> Current Bullet : %d"), CurrentBulletCount);
-        };
-    GetWorld()->GetTimerManager().SetTimer(chargeAmmoTimer, chargeAmmoLambda, ChargeAmmoTime, false);
+    //// MAY
+    //// 일정 시간이 지나면 Ammo 자동 충전
+    //FTimerHandle chargeAmmoTimer;
+    //auto chargeAmmoLambda = [&]() {
+    //        if(CurrentBulletCount >= MaxBulletCount) return;
+    //        CurrentBulletCount++;
+    //        UE_LOG(LogTemp, Error, TEXT(">>> Current Bullet : %d"), CurrentBulletCount);
+    //    };
+    //GetWorld()->GetTimerManager().SetTimer(chargeAmmoTimer, chargeAmmoLambda, ChargeAmmoTime, false);
 }

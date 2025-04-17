@@ -18,6 +18,7 @@ ACBullet::ACBullet()
 	BulletMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BulletMesh"));
 	BulletMesh->SetupAttachment(RootComponent);
 
+	// May
 	ConstructorHelpers::FObjectFinder<UStaticMesh> tmpMesh(TEXT("/Script/Engine.StaticMesh'/Engine/EditorMeshes/ArcadeEditorSphere.ArcadeEditorSphere'"));
 	if (tmpMesh.Succeeded())
 	{
@@ -43,19 +44,15 @@ void ACBullet::Tick(float DeltaTime)
 
 void ACBullet::ActivateBullet(bool bIsActivate)
 {
-	// Visibility
 	BulletMesh->SetVisibility(bIsActivate);
 
-	// Collision
 	auto collision = bIsActivate ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::NoCollision;
 	BulletComp->SetCollisionEnabled(collision);
-
-	UE_LOG(LogTemp, Warning, TEXT("Visibility : %d / Collision : %d"), BulletComp->IsVisible(), collision);
+	//UE_LOG(LogTemp, Warning, TEXT("Visibility : %d / Collision : %d"), BulletComp->IsVisible(), collision);
 }
 
 void ACBullet::DoMoveBullet(float InDeltaTime)
 {
-	// 이동
 	FVector direction = FireDestination - GetActorLocation();
 	SetActorLocation(GetActorLocation() + (direction.GetSafeNormal() * BulletSpeed) * InDeltaTime);
 	
@@ -70,16 +67,18 @@ void ACBullet::CompleteMoveBullet(FVector InDestination)
 	bCanMove = false;
 	SetActorLocation(InDestination);
 
-	FTimerHandle handle;
-	auto lambda = [&]() { this->BulletMesh->SetVisibility(false); };
-	GetWorld()->GetTimerManager().SetTimer(handle, lambda, BulletDieTime, false);
+	//May
+	auto lambda = [&]() { 
+		this->BulletMesh->SetVisibility(false); 
+		GetWorld()->GetTimerManager().ClearTimer(DeactivateTimer);
+		};
+	GetWorld()->GetTimerManager().SetTimer(DeactivateTimer, lambda, BulletDieTime, false);
 }
 
 void ACBullet::OnBulletOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if(!bCanMove) return;
 
-	// Hit된 곳으로 위치 보정
 	CompleteMoveBullet(SweepResult.Location);
 }
 
