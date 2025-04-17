@@ -35,6 +35,8 @@ protected:
 
 	FVector FireDestination;
 
+	FTimerHandle DeactivateTimer;
+
 public:
 	USphereComponent* GetBulletComp() const { return BulletComp; };
 	UStaticMeshComponent* GetBulletMesh() const { return BulletMesh; }

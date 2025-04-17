@@ -47,7 +47,7 @@ void ACGun::AddBulletToPool(bool bIsActivate)
 	params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 	FTransform firePosition = GunMeshComp->GetSocketTransform(TEXT("FirePosition"));
-	UE_LOG(LogTemp, Warning, TEXT(">>>>> Socket Tranform : %s"), *GunMeshComp->GetSocketTransform(TEXT("FirePosition")).ToString());
+	//UE_LOG(LogTemp, Warning, TEXT(">>>>> Socket Tranform : %s"), *GunMeshComp->GetSocketTransform(TEXT("FirePosition")).ToString());
 
 	ACBullet* bullet = GetWorld()->SpawnActor<ACBullet>(BulletSpawner, firePosition, params);
 
@@ -60,9 +60,9 @@ void ACGun::AddBulletToPool(bool bIsActivate)
 
 void ACGun::InitializeBulletPool()
 {
-	UE_LOG(LogTemp, Warning, TEXT(">>>>> %d : Initialize Bullet Pool Start <<<<<"), BulletPool.Num());
+	//UE_LOG(LogTemp, Warning, TEXT(">>>>> %d : Initialize Bullet Pool Start <<<<<"), BulletPool.Num());
 	for (int32 i = 0; i < MaxBulletCnt; ++i) AddBulletToPool(false);
-	UE_LOG(LogTemp, Warning, TEXT(">>>>> %d : Initialize Bullet Pool Complete <<<<<"), BulletPool.Num());
+	//UE_LOG(LogTemp, Warning, TEXT(">>>>> %d : Initialize Bullet Pool Complete <<<<<"), BulletPool.Num());
 }
 
 
@@ -94,7 +94,7 @@ void ACGun::FireBullet(FVector InDestination)
 			// FX를 재생한다
 			// PlayFireFX();
 
-			UE_LOG(LogTemp, Warning, TEXT("--------------SPAWN BULLET--------------"));
+			//UE_LOG(LogTemp, Warning, TEXT("--------------SPAWN BULLET--------------"));
 			// 반복을 그만한다
 			break;
 		}
