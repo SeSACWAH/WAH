@@ -9,7 +9,7 @@
 ACMay::ACMay()
 {
     // Skeleta Mesh
-    ConstructorHelpers::FObjectFinder<USkeletalMesh> tmpMesh(TEXT(""));
+    ConstructorHelpers::FObjectFinder<USkeletalMesh> tmpMesh(TEXT("/Script/Engine.SkeletalMesh'/Game/Net/May/May.May'"));
     if(tmpMesh.Succeeded()) GetMesh()->SetSkeletalMesh(tmpMesh.Object);
 }
 

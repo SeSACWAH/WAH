@@ -1,5 +1,5 @@
 #include "Guns/CGun.h"
-#include "../../../../../../../Source/Runtime/Engine/Classes/Components/StaticMeshComponent.h"
+
 #include "../../../../../../../Plugins/FX/Niagara/Source/Niagara/Public/NiagaraFunctionLibrary.h"
 #include "../../../../../../../Plugins/FX/Niagara/Source/Niagara/Public/NiagaraComponent.h"
 #include "../../../../../../../Plugins/FX/Niagara/Source/Niagara/Classes/NiagaraSystem.h"
@@ -12,11 +12,11 @@ ACGun::ACGun()
 	PrimaryActorTick.bCanEverTick = true;
 
 	// Gun
-	GunMeshComp = CreateDefaultSubobject<UStaticMeshComponent>( TEXT("GunMeshComp") );
+	GunMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>( TEXT("GunMeshComp") );
 	SetRootComponent(GunMeshComp);
 
-	ConstructorHelpers::FObjectFinder<UStaticMesh> tmpMesh(TEXT("/Script/Engine.StaticMesh'/Game/DYL/Meshes/PistolMesh/SM_Pistol.SM_Pistol'"));
-	if (tmpMesh.Succeeded()) GunMeshComp->SetStaticMesh(tmpMesh.Object);
+	//ConstructorHelpers::FObjectFinder<USkeletalMesh> tmpMesh(TEXT("/Script/Engine.SkeletalMesh'/Game/Net/Match/MatchSniper.MatchSniper'"));
+	//if (tmpMesh.Succeeded()) GunMeshComp->SetSkeletalMesh(tmpMesh.Object);
 
 	// Fire Niagara
 	//InitializeFireFXPool();
@@ -42,20 +42,20 @@ FVector ACGun::GetFirePosition()
 
 void ACGun::AddBulletToPool(bool bIsActivate)
 {
-	FActorSpawnParameters params;
-	// 스폰 시 충돌이 생겨도 제자리에서 스폰되게 하는 기능
-	params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	//FActorSpawnParameters params;
+	//// 스폰 시 충돌이 생겨도 제자리에서 스폰되게 하는 기능
+	//params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	FTransform firePosition = GunMeshComp->GetSocketTransform(TEXT("FirePosition"));
-	//UE_LOG(LogTemp, Warning, TEXT(">>>>> Socket Tranform : %s"), *GunMeshComp->GetSocketTransform(TEXT("FirePosition")).ToString());
+	//FTransform firePosition = GunMeshComp->GetSocketTransform(TEXT("FirePosition"));
+	////UE_LOG(LogTemp, Warning, TEXT(">>>>> Socket Tranform : %s"), *GunMeshComp->GetSocketTransform(TEXT("FirePosition")).ToString());
 
-	ACBullet* bullet = GetWorld()->SpawnActor<ACBullet>(BulletSpawner, firePosition, params);
+	//ACBullet* bullet = GetWorld()->SpawnActor<ACBullet>(BulletSpawner, firePosition, params);
 
-	bullet->ActivateBullet(bIsActivate);
-	bullet->SetCanMove(bIsActivate);
-	BulletPool.Add(bullet);
+	//bullet->ActivateBullet(bIsActivate);
+	//bullet->SetCanMove(bIsActivate);
+	//BulletPool.Add(bullet);
 
-	//UE_LOG(LogTemp, Warning, TEXT("[%d] : Add Bullet To Pool"), BulletPool.Num());
+	////UE_LOG(LogTemp, Warning, TEXT("[%d] : Add Bullet To Pool"), BulletPool.Num());
 }
 
 void ACGun::InitializeBulletPool()
@@ -103,7 +103,7 @@ void ACGun::FireBullet(FVector InDestination)
 	// 사용 가능한 총알이 없다면 추가로 만들고 스폰한다
 	if (!bIsFound) 
 	{
-		UE_LOG(LogTemp, Warning, TEXT("--------------Couldn't find BULLET--------------"));
+		//UE_LOG(LogTemp, Warning, TEXT("--------------Couldn't find BULLET--------------"));
 		AddBulletToPool(false);
 		FireBullet(InDestination);
 	}

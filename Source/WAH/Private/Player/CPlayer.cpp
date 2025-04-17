@@ -47,6 +47,10 @@ ACPlayer::ACPlayer()
 
     /* Collision */
     GetCapsuleComponent()->SetCollisionProfileName(FName("Player"));
+    GetMesh()->SetCollisionProfileName(FName("NoCollision"));
+
+    /* Location */
+    GetCapsuleComponent()->SetRelativeLocation(FVector(0, 0, -90));
 
     /* IMC */
     ConstructorHelpers::FObjectFinder<UInputMappingContext> tmpIMC(TEXT("/Script/EnhancedInput.InputMappingContext'/Game/DYL/Inputs/IMC_Player.IMC_Player'"));
@@ -471,7 +475,7 @@ void ACPlayer::AttachGun()
     if (GunBP)
     {
         Gun = GetWorld()->SpawnActor<ACGun>(GunBP);
-        if(Gun) Gun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("Gun"));
+        if(Gun) Gun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("GunSocket"));
         //UE_LOG(LogTemp, Error, TEXT(">>> Attach Gun Success"));
     }
 }

@@ -18,10 +18,10 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 
-private:
+protected:
 	// Gun Mesh
     UPROPERTY(EditDefaultsOnly, Category = "Gun|Default")
-	class UStaticMeshComponent* GunMeshComp;
+	class USkeletalMeshComponent* GunMeshComp;
 
 	// Bullet
 	UPROPERTY(EditDefaultsOnly, Category = "Gun|Bullet")
@@ -33,15 +33,15 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Gun|Bullet")
 	TSubclassOf<class ACBullet> BulletSpawner;
 
-	void AddBulletToPool(bool bIsActivate);
+	virtual void AddBulletToPool(bool bIsActivate);
 	void InitializeBulletPool();
 public:
-	UStaticMeshComponent* GetGunMeshComp(){return GunMeshComp;};
+	USkeletalMeshComponent* GetGunMeshComp(){return GunMeshComp;};
 	FVector GetFirePosition();
 	void FireBullet(FVector InDestination);
 
 	// Spawn Effect
-private:
+protected:
 	int32 MaxFireFXCnt = 6;
 
     UPROPERTY(EditDefaultsOnly, Category = "Gun|FX")
@@ -57,7 +57,7 @@ private:
 	void OnFireFXFinished(UNiagaraComponent* InComp);
 
 	// Sound
-private:
+protected:
 	// 발사되었을 때 재생할 소리
 	UPROPERTY(EditAnywhere, Category = "Gun|Sound")
 	class USoundBase* FireSound;

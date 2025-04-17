@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
-#include "LockedCrossHairUI.generated.h"
+#include "Guns/CBullet.h"
+#include "CMatchBullet.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class WAH_API ULockedCrossHairUI : public UUserWidget
+class WAH_API ACMatchBullet : public ACBullet
 {
 	GENERATED_BODY()
 	
