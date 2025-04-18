@@ -5,6 +5,9 @@
 #include "../../../../../../../Source/Runtime/UMG/Public/Blueprint/WidgetLayoutLibrary.h"
 #include "../../../../../../../Source/Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
 #include "UI/CLockedCrossHairUI.h"
+#include <Guns/CMatchGun.h>
+#include "UI/CUnlockedCrossHairUI.h"
+#include "../../../../../../../Source/Runtime/Engine/Classes/GameFramework/SpringArmComponent.h"
 
 ACMay::ACMay()
 {
@@ -16,6 +19,9 @@ ACMay::ACMay()
 void ACMay::BeginPlay()
 {
     Super::BeginPlay();
+
+    InitCrosshairWidgets();
+    AttachGun();
 }
 
 void ACMay::Tick(float DeltaTime)
@@ -37,7 +43,7 @@ void ACMay::DoFire()
 
     // UE_LOG(LogTemp, Error, TEXT(">>>>> Fire Input Entered <<<<<"));
     CurrentBulletCount--;
-    Gun->FireBullet(FireDestination);
+    MatchGun->FireBullet(FireDestination);
     bIsInFireDelayTime = true;
     // UE_LOG(LogTemp, Error, TEXT(">>> Current Bullet : %d"), CurrentBulletCount);
 
@@ -56,11 +62,79 @@ void ACMay::DoFire()
     GetWorld()->GetTimerManager().SetTimer(chargeAmmoTimer, chargeAmmoLambda, ChargeAmmoTime, false);
 }
 
+void ACMay::AttachGun()
+{
+    if (MatchBP)
+    {
+        MatchGun = GetWorld()->SpawnActor<ACMatchGun>(MatchBP);
+        if (MatchGun) MatchGun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("GunSocket"));
+        //UE_LOG(LogTemp, Error, TEXT(">>> Attach Gun Success"));
+    }
+}
+
+void ACMay::InitCrosshairWidgets()
+{
+    if (UnlockedCrossshairWidget)
+    {
+        UnlockedCrossshairUI = Cast<UCUnlockedCrossHairUI>(CreateWidget(GetWorld(), UnlockedCrossshairWidget));
+        UnlockedCrossshairUI->SetVisibility(ESlateVisibility::Hidden);
+        UnlockedCrossshairUI->AddToViewport();
+    }
+
+    if (LockedCrossshairWidget)
+    {
+        LockedCrossshairUI = Cast<UCLockedCrossHairUI>(CreateWidget(GetWorld(), LockedCrossshairWidget));
+        LockedCrossshairUI->SetVisibility(ESlateVisibility::Hidden);
+        LockedCrossshairUI->AddToViewport();
+    }
+}
+
+void ACMay::SetUnlockedCrosshairVisibility(bool bVisible)
+{
+    if (UnlockedCrossshairUI)
+        UnlockedCrossshairUI->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+}
+
+void ACMay::SetLockedCrosshairVisibility(bool bVisible)
+{
+    if (LockedCrossshairUI)
+        LockedCrossshairUI->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+}
+
+void ACMay::StartAim(const FInputActionValue& InValue)
+{
+    if (bIsDead || bIsDamaged || bIsReviving) return;
+
+    bCanAim = true;
+
+    if (CameraBoom->GetComponentLocation() == CameraBoomLocationDefault) ZoomCurrentTime = 0;
+
+    if (UnlockedCrossshairUI) SetUnlockedCrosshairVisibility(true);
+
+    bUseControllerRotationYaw = true;
+    bCanZoom = true;
+}
+
+void ACMay::AdjustTargetArmLocation(float InDeltaTime)
+{
+    //UE_LOG(LogTemp, Warning, TEXT(">>> Start Adjust Target Arm Location <<<"));
+    float ratio;
+
+    if (bCanZoom) ZoomCurrentTime += InDeltaTime;
+    else ZoomCurrentTime -= InDeltaTime;
+
+    // CurTime이 범위를 벗어나는 것을 한정해줌
+    ZoomCurrentTime = FMath::Clamp(ZoomCurrentTime, 0, AimZoomMaxTime);
+
+    ratio = EaseInOutQuad(ZoomCurrentTime / AimZoomMaxTime);
+    CameraBoom->SetRelativeLocation(FMath::Lerp(CameraBoomLocationDefault, CameraBoomLocationZoomIn, ratio));
+}
+
 void ACMay::TriggerAim(const FInputActionValue& InValue)
 {
     if (bIsDead || bIsDamaged || bIsReviving) return;
 
-    FVector startPos = Gun->GetFirePosition();
+    FVector startPos = MatchGun->GetFirePosition();
     FVector endPos = startPos + PlayerCamear->GetForwardVector() * SphereTraceDistance;
 
     FHitResult hitResult;
@@ -114,5 +188,32 @@ void ACMay::TriggerAim(const FInputActionValue& InValue)
         FireDestination = endPos;
         SetLockedCrosshairVisibility(false);
         SetUnlockedCrosshairVisibility(true);
+    }
+}
+
+void ACMay::CompleteAim(const FInputActionValue& InValue)
+{
+    SetUnlockedCrosshairVisibility(false);
+    SetLockedCrosshairVisibility(false);
+
+    bUseControllerRotationYaw = false;
+    bCanZoom = false;
+    bCanAim = false;
+}
+
+void ACMay::OnDead()
+{
+    Super::OnDead();
+    MatchGun->GetGunMeshComp()->SetVisibility(false);
+}
+
+void ACMay::OnRevive(float InDeltaTime)
+{
+    Super::OnRevive(InDeltaTime);
+    if (CurrentReviveTime >= RevivalTime)
+    {
+        MatchGun->GetGunMeshComp()->SetVisibility(true);
+
+        //등장 FX Visible 켜기
     }
 }

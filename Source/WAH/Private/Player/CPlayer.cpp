@@ -86,10 +86,9 @@ void ACPlayer::BeginPlay()
 {
     Super::BeginPlay();
 
+    /*InitCrosshairWidgets();*/
     // Override
-    InitCrosshairWidgets();
-    // Override
-    AttachGun();
+    //AttachGun();
 }
 
 void ACPlayer::Tick(float DeltaTime)
@@ -180,7 +179,7 @@ void ACPlayer::OnDead()
     bIsDead = true;
 
     GetMesh()->SetVisibility(false);
-    Gun->GetGunMeshComp()->SetVisibility(false);
+    //Gun->GetGunMeshComp()->SetVisibility(false);
     SetActorLocation(GetActorLocation() + -GetActorUpVector() * 100);
 
     // 죽음 FX의 Visibility를 켠다
@@ -216,7 +215,8 @@ void ACPlayer::OnRevive(float InDeltaTime)
     else
     {
         GetMesh()->SetVisibility(true);
-        Gun->GetGunMeshComp()->SetVisibility(true);
+        //Gun->GetGunMeshComp()->SetVisibility(true);
+        
         //등장 FX Visible 켜기
         
         SetActorLocation(FVector(0));
@@ -324,31 +324,31 @@ void ACPlayer::ResetDash(float InDeltaTime)
 
 void ACPlayer::InitCrosshairWidgets()
 {
-    if (UnlockedCrossshairWidget)
-    {
-        UnlockedCrossshairUI = Cast<UCUnlockedCrossHairUI>(CreateWidget(GetWorld(), UnlockedCrossshairWidget));
-        UnlockedCrossshairUI->SetVisibility(ESlateVisibility::Hidden);
-        UnlockedCrossshairUI->AddToViewport();
-    }
+    //if (UnlockedCrossshairWidget)
+    //{
+    //    UnlockedCrossshairUI = Cast<UCUnlockedCrossHairUI>(CreateWidget(GetWorld(), UnlockedCrossshairWidget));
+    //    UnlockedCrossshairUI->SetVisibility(ESlateVisibility::Hidden);
+    //    UnlockedCrossshairUI->AddToViewport();
+    //}
 
-    if (LockedCrossshairWidget)
-    {
-        LockedCrossshairUI = Cast<UCLockedCrossHairUI>(CreateWidget(GetWorld(), LockedCrossshairWidget));
-        LockedCrossshairUI->SetVisibility(ESlateVisibility::Hidden);
-        LockedCrossshairUI->AddToViewport();
-    }
+    //if (LockedCrossshairWidget)
+    //{
+    //    LockedCrossshairUI = Cast<UCLockedCrossHairUI>(CreateWidget(GetWorld(), LockedCrossshairWidget));
+    //    LockedCrossshairUI->SetVisibility(ESlateVisibility::Hidden);
+    //    LockedCrossshairUI->AddToViewport();
+    //}
 }
 
 void ACPlayer::SetUnlockedCrosshairVisibility(bool bVisible)
 {
-    if (UnlockedCrossshairUI)
-        UnlockedCrossshairUI->SetVisibility( bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden );
+    //if (UnlockedCrossshairUI)
+    //    UnlockedCrossshairUI->SetVisibility( bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden );
 }
 
 void ACPlayer::SetLockedCrosshairVisibility(bool bVisible)
 {
-    if (LockedCrossshairUI)
-        LockedCrossshairUI->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+    //if (LockedCrossshairUI)
+    //    LockedCrossshairUI->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 }
 
 float ACPlayer::EaseInOutQuad(float InRatio)
@@ -370,31 +370,31 @@ float ACPlayer::EaseOutSine(float InRatio)
 
 void ACPlayer::StartAim(const FInputActionValue& InValue)
 {
-    if (bIsDead || bIsDamaged || bIsReviving) return;
+    //if (bIsDead || bIsDamaged || bIsReviving) return;
 
-    bCanAim = true;
+    //bCanAim = true;
 
-    if (CameraBoom->GetComponentLocation() == CameraBoomLocationDefault) ZoomCurrentTime = 0;
+    //if (CameraBoom->GetComponentLocation() == CameraBoomLocationDefault) ZoomCurrentTime = 0;
 
-    if (UnlockedCrossshairUI) SetUnlockedCrosshairVisibility(true);
+    //if (UnlockedCrossshairUI) SetUnlockedCrosshairVisibility(true);
 
-    bUseControllerRotationYaw = true;
-    bCanZoom = true;
+    //bUseControllerRotationYaw = true;
+    //bCanZoom = true;
 }
 
 void ACPlayer::AdjustTargetArmLocation(float InDeltaTime)
 {
-    //UE_LOG(LogTemp, Warning, TEXT(">>> Start Adjust Target Arm Location <<<"));
-    float ratio;
+    ////UE_LOG(LogTemp, Warning, TEXT(">>> Start Adjust Target Arm Location <<<"));
+    //float ratio;
 
-    if (bCanZoom) ZoomCurrentTime += InDeltaTime;
-    else ZoomCurrentTime -= InDeltaTime;
+    //if (bCanZoom) ZoomCurrentTime += InDeltaTime;
+    //else ZoomCurrentTime -= InDeltaTime;
 
-    // CurTime이 범위를 벗어나는 것을 한정해줌
-    ZoomCurrentTime = FMath::Clamp(ZoomCurrentTime, 0, AimZoomMaxTime);
+    //// CurTime이 범위를 벗어나는 것을 한정해줌
+    //ZoomCurrentTime = FMath::Clamp(ZoomCurrentTime, 0, AimZoomMaxTime);
 
-    ratio = EaseInOutQuad(ZoomCurrentTime / AimZoomMaxTime);
-    CameraBoom->SetRelativeLocation(FMath::Lerp(CameraBoomLocationDefault, CameraBoomLocationZoomIn, ratio));
+    //ratio = EaseInOutQuad(ZoomCurrentTime / AimZoomMaxTime);
+    //CameraBoom->SetRelativeLocation(FMath::Lerp(CameraBoomLocationDefault, CameraBoomLocationZoomIn, ratio));
 }
 
 void ACPlayer::TriggerAim(const FInputActionValue& InValue)
@@ -461,23 +461,23 @@ void ACPlayer::TriggerAim(const FInputActionValue& InValue)
 
 void ACPlayer::CompleteAim(const FInputActionValue& InValue)
 {
-    SetUnlockedCrosshairVisibility(false);
-    SetLockedCrosshairVisibility(false);
+    //SetUnlockedCrosshairVisibility(false);
+    //SetLockedCrosshairVisibility(false);
 
-    bUseControllerRotationYaw = false;
-    bCanZoom = false;
-    bCanAim = false;
+    //bUseControllerRotationYaw = false;
+    //bCanZoom = false;
+    //bCanAim = false;
 }
 
 
 void ACPlayer::AttachGun()
 {
-    if (GunBP)
-    {
-        Gun = GetWorld()->SpawnActor<ACGun>(GunBP);
-        if(Gun) Gun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("GunSocket"));
-        //UE_LOG(LogTemp, Error, TEXT(">>> Attach Gun Success"));
-    }
+    //if (GunBP)
+    //{
+    //    Gun = GetWorld()->SpawnActor<ACGun>(GunBP);
+    //    if(Gun) Gun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("GunSocket"));
+    //    //UE_LOG(LogTemp, Error, TEXT(">>> Attach Gun Success"));
+    //}
 }
 
 void ACPlayer::DoFire()

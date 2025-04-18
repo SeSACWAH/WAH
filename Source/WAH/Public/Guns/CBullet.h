@@ -37,16 +37,15 @@ protected:
 
 	FTimerHandle DeactivateTimer;
 
+    //UFUNCTION()
+    //virtual void OnMatchBulletOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 public:
-	USphereComponent* GetBulletComp() const { return BulletComp; };
-	UStaticMeshComponent* GetBulletMesh() const { return BulletMesh; }
-	void SetFireDestination(FVector InDirection) { FireDestination = InDirection; }
-	void SetCanMove(bool InResult) { bCanMove = InResult; }
+    virtual USphereComponent* GetBulletComp() const;
+    virtual UStaticMeshComponent* GetBulletMesh() const;
+    virtual void SetFireDestination(FVector InDirection);
+	virtual void SetCanMove(bool InResult);
 
-	void ActivateBullet(bool bIsActivate);
-	void DoMoveBullet(float InDeltaTime);
-	void CompleteMoveBullet(FVector InDestination);
-
-	UFUNCTION()
-	void OnBulletOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	virtual void ActivateBullet(bool bIsActivate);
+	virtual void DoMoveBullet(float InDeltaTime);
+	virtual void CompleteMoveBullet(FVector InDestination);
 };

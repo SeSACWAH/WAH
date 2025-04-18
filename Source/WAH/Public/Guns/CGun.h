@@ -19,42 +19,41 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 protected:
-	// Gun Mesh
-    UPROPERTY(EditDefaultsOnly, Category = "Gun|Default")
-	class USkeletalMeshComponent* GunMeshComp;
+	//// Gun Mesh
+ //   UPROPERTY(EditDefaultsOnly, Category = "Gun|Default")
+	//class USkeletalMeshComponent* GunMeshComp;
 
 	// Bullet
 	UPROPERTY(EditDefaultsOnly, Category = "Gun|Bullet")
 	int32 MaxBulletCnt = 6;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Gun|Bullet")
-	TArray<class ACBullet*> BulletPool;
+	//UPROPERTY(EditDefaultsOnly, Category = "Gun|Bullet")
+	//TArray<class ACBullet*> BulletPool;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Gun|Bullet")
-	TSubclassOf<class ACBullet> BulletSpawner;
+	//UPROPERTY(EditDefaultsOnly, Category = "Gun|Bullet")
+	//TSubclassOf<class ACBullet> BulletSpawner;
 
 	virtual void AddBulletToPool(bool bIsActivate);
-	void InitializeBulletPool();
+	virtual void InitializeBulletPool();
+
 public:
-	USkeletalMeshComponent* GetGunMeshComp(){return GunMeshComp;};
-	FVector GetFirePosition();
-	void FireBullet(FVector InDestination);
+	virtual USkeletalMeshComponent* GetGunMeshComp();
+	virtual void FireBullet(FVector InDestination);
 
 	// Spawn Effect
 protected:
 	int32 MaxFireFXCnt = 6;
 
-    UPROPERTY(EditDefaultsOnly, Category = "Gun|FX")
-    TArray<class UNiagaraSystem*> FireFXSystemPool;
+ //   UPROPERTY(EditDefaultsOnly, Category = "Gun|FX")
+ //   TArray<class UNiagaraSystem*> FireFXSystemPool;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Gun|FX")
-	TArray<class UNiagaraComponent*> FireFXPool;
+	//UPROPERTY(EditDefaultsOnly, Category = "Gun|FX")
+	//TArray<class UNiagaraComponent*> FireFXPool;
 
-
-	void AddFireFXToPool(bool bIsActivate);
-	void InitializeFireFXPool();
-	void PlayFireFX();
-	void OnFireFXFinished(UNiagaraComponent* InComp);
+	virtual void AddFireFXToPool(bool bIsActivate);
+	virtual void InitializeFireFXPool();
+	virtual void PlayFireFX();
+	virtual void OnFireFXFinished(class UNiagaraComponent* InComp);
 
 	// Sound
 protected:
