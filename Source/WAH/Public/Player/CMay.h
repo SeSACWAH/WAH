@@ -31,8 +31,29 @@ protected:
 
     virtual void DoFire() override;
 #pragma endregion
+    UPROPERTY(EditAnywhere, Category = Gun)
+    TSubclassOf<class ACMatchGun> MatchBP;
+
+#pragma region Gun
+    UPROPERTY()
+    class ACMatchGun* MatchGun;
+
+    virtual void AttachGun() override;
+#pragma endregion
 
 #pragma region Trigger Aim
+    virtual void InitCrosshairWidgets() override;
+    virtual void SetUnlockedCrosshairVisibility(bool bVisible);
+    virtual void SetLockedCrosshairVisibility(bool bVisible);
+
+    virtual void StartAim(const FInputActionValue& InValue);
+    virtual void AdjustTargetArmLocation(float InDeltaTime);
     virtual void TriggerAim(const FInputActionValue& InValue) override;
+    virtual void CompleteAim(const FInputActionValue& InValue);
+#pragma endregion
+
+#pragma region Status
+    virtual void OnDead() override;
+    virtual void OnRevive(float InDeltaTime);
 #pragma endregion
 };
