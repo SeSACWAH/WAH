@@ -53,10 +53,11 @@ protected:
     class UInputAction* IA_Revival;
 
     void RecoverHP();
-    void OnDead();
     void RevivalInputEntered(const struct FInputActionValue& InValue);
-    void OnRevive(float InDeltaTime);
     void GodMode(float InDeltaTime);
+
+    virtual void OnDead();
+    virtual void OnRevive(float InDeltaTime);
 public:
     bool GetIsDead(){ return bIsDead; }
     void OnDamaged(int32 InDamage);
@@ -233,31 +234,31 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Aim|SphereTrace")
     float SphereTraceRadius = 10.f;
 
-    FVector FireDestination;
+    FVector FireDestination = FVector::ZeroVector;
 
-    void InitCrosshairWidgets();
+    virtual void InitCrosshairWidgets();
 
-    void SetUnlockedCrosshairVisibility (bool bVisible);
-    void SetLockedCrosshairVisibility (bool bVisible);
+    virtual void SetUnlockedCrosshairVisibility(bool bVisible);
+    virtual void SetLockedCrosshairVisibility(bool bVisible);
 
     float EaseInOutQuad(float InRatio);
     float EaseOutExpo(float InRatio);
     float EaseOutSine(float InRatio);
 
-    void StartAim(const FInputActionValue& InValue);
-    void AdjustTargetArmLocation(float InDeltaTime);
+    virtual void StartAim(const FInputActionValue& InValue);
+    virtual void AdjustTargetArmLocation(float InDeltaTime);
     virtual void TriggerAim(const FInputActionValue& InValue);
-    void CompleteAim(const FInputActionValue& InValue);
+    virtual void CompleteAim(const FInputActionValue& InValue);
 #pragma endregion
 
 #pragma region Gun
-    UPROPERTY(EditAnywhere, Category = Gun)
-    TSubclassOf<class ACGun> GunBP;
+    //UPROPERTY(EditAnywhere, Category = Gun)
+    //TSubclassOf<class ACGun> GunBP;
 
-    UPROPERTY()
-    class ACGun* Gun;
+    //UPROPERTY()
+    //class ACGun* Gun;
 
-    void AttachGun();
+    virtual void AttachGun();
 #pragma endregion
 
 #pragma region Fire
