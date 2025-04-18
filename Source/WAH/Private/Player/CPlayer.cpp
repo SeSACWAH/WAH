@@ -26,7 +26,7 @@ ACPlayer::ACPlayer()
 
     /* Character Movement */
     GetCharacterMovement()->bOrientRotationToMovement = true;
-    GetCharacterMovement()->bUseControllerDesiredRotation = false;
+    GetCharacterMovement()->bUseControllerDesiredRotation = true;
     GetCharacterMovement()->MaxWalkSpeed = SpeedJog;
 
     /* Jump */

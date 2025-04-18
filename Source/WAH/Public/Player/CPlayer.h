@@ -153,6 +153,8 @@ protected:
     FVector DashStartPos;
     FVector DashEndPos;
 
+    FVector PrevPos;
+
     UPROPERTY(EditDefaultsOnly, Category = Dash)
     float DashDistance = 300.f;
 
