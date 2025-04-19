@@ -23,9 +23,12 @@ protected:
     FTimerHandle DamageTimer;
     FTimerHandle RecoverTimer;
 
-
     int32 MaxHP = 12;
+    UPROPERTY(ReplicatedUsing = OnRep_HP)
     int32 HP = MaxHP;
+
+    UFUNCTION()
+    void OnRep_HP(int32 InDamage);
 
     bool bIsDamaged = false;
     bool bIsDead = false;
@@ -286,6 +289,10 @@ protected:
     //float ChargeAmmoTime = 3.5f;
 
     virtual void DoFire();
+#pragma endregion
+
+#pragma region Network
+    void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 #pragma endregion
 
 };

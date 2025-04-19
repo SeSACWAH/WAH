@@ -14,10 +14,16 @@
 #include "Kismet/GameplayStatics.h"
 #include "../../../../../../../Source/Runtime/UMG/Public/Blueprint/WidgetLayoutLibrary.h"
 #include "../../../../../../../Source/Runtime/Engine/Classes/Components/SphereComponent.h"
+#include "EngineUtils.h"
+#include "Net/UnrealNetwork.h"
+#include "Engine/Engine.h"
 
 ACPlayer::ACPlayer()
 {
     PrimaryActorTick.bCanEverTick = true;
+
+    /* Network */
+    bReplicates = true;
 
     /* Controller Rotation */
     bUseControllerRotationPitch = false;
@@ -139,11 +145,43 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
     }
 }
 
+void ACPlayer::OnRep_HP(int32 InDamage)
+{
+    GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, TEXT("[DAMAGED]"));
+
+    bIsDamaged = true;
+    HP -= InDamage;
+    if (HP <= 0)
+    {
+        OnDead();
+        return;
+    }
+
+    auto lambda = [&]() {
+        GetWorld()->GetTimerManager().ClearTimer(DamageTimer);
+        //RecoverHP();
+        auto lambda = [&]() {
+            if (HP < MaxHP)
+            {
+                HP++;
+            }
+            else
+            {
+                bIsDamaged = false;
+                GetWorld()->GetTimerManager().ClearTimer(RecoverTimer);
+            }
+            };
+        GetWorld()->GetTimerManager().SetTimer(RecoverTimer, lambda, RecoverTime, true);
+        };
+    GetWorld()->GetTimerManager().SetTimer(DamageTimer, lambda, DamageDurationTime, false);
+}
+
 void ACPlayer::OnDamaged(int32 InDamage)
 {
     if (bIsGodMode || bIsDead) return;
+    OnRep_HP(InDamage);
 
-    bIsDamaged = true;
+    /*bIsDamaged = true;
     HP -= InDamage;
     if(HP <= 0)
     {
@@ -155,24 +193,24 @@ void ACPlayer::OnDamaged(int32 InDamage)
             GetWorld()->GetTimerManager().ClearTimer(DamageTimer);
             RecoverHP();
         };
-    GetWorld()->GetTimerManager().SetTimer(DamageTimer, lambda, DamageDurationTime, false);
+    GetWorld()->GetTimerManager().SetTimer(DamageTimer, lambda, DamageDurationTime, false);*/
 }
 
-void ACPlayer::RecoverHP()
-{
-    auto lambda = [&](){
-        if(HP < MaxHP)
-        {
-            HP++;
-        }
-        else
-        {
-            bIsDamaged = false;
-            GetWorld()->GetTimerManager().ClearTimer(RecoverTimer);
-        }
-            };
-    GetWorld()->GetTimerManager().SetTimer(RecoverTimer, lambda, RecoverTime, true);
-}
+//void ACPlayer::RecoverHP()
+//{
+//    auto lambda = [&](){
+//        if(HP < MaxHP)
+//        {
+//            HP++;
+//        }
+//        else
+//        {
+//            bIsDamaged = false;
+//            GetWorld()->GetTimerManager().ClearTimer(RecoverTimer);
+//        }
+//            };
+//    GetWorld()->GetTimerManager().SetTimer(RecoverTimer, lambda, RecoverTime, true);
+//}
 
 void ACPlayer::OnDead()
 {
@@ -511,4 +549,11 @@ void ACPlayer::DoFire()
     //        UE_LOG(LogTemp, Error, TEXT(">>> Current Bullet : %d"), CurrentBulletCount);
     //    };
     //GetWorld()->GetTimerManager().SetTimer(chargeAmmoTimer, chargeAmmoLambda, ChargeAmmoTime, false);
+}
+
+void ACPlayer::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    //DOREPLIFETIME(ACPlayer, );
 }
