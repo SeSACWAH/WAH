@@ -158,7 +158,7 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void ACPlayer::OnRep_HP(int32 InDamage)
 {
-    GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, TEXT("[DAMAGED]"));
+    GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, FString::Printf(TEXT("[DAMAGED] Player Get DAMAGED : %d"), HP));
 
     bIsDamaged = true;
     HP -= InDamage;
@@ -172,12 +172,15 @@ void ACPlayer::OnRep_HP(int32 InDamage)
         GetWorld()->GetTimerManager().ClearTimer(DamageTimer);
         //RecoverHP();
         auto lambda = [&]() {
+            GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, TEXT("[DAMAGED] TIMER END @@@@@@@@@@@@@@"));
             if (HP < MaxHP)
             {
+                GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, FString::Printf(TEXT("[DAMAGED] Current HP : %d"), HP));
                 HP++;
             }
             else
             {
+                GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, FString::Printf(TEXT("[DAMAGED] HP RECOVERED !!!: %d"), HP));
                 bIsDamaged = false;
                 GetWorld()->GetTimerManager().ClearTimer(RecoverTimer);
             }
