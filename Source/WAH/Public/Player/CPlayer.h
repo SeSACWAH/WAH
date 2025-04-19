@@ -27,9 +27,6 @@ protected:
     UPROPERTY(ReplicatedUsing = OnRep_HP)
     int32 HP = MaxHP;
 
-    UFUNCTION()
-    void OnRep_HP(int32 InDamage);
-
     bool bIsDamaged = false;
     bool bIsDead = false;
     bool bIsReviving = false;
@@ -55,12 +52,24 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = Input)
     class UInputAction* IA_Revival;
 
-    void RecoverHP();
+    //void RecoverHP();
     void RevivalInputEntered(const struct FInputActionValue& InValue);
     void GodMode(float InDeltaTime);
 
     virtual void OnDead();
     virtual void OnRevive(float InDeltaTime);
+
+    UFUNCTION()
+    void OnRep_HP(int32 InDamage);
+
+    UFUNCTION(Server, Reliable)
+    void ServerRPC_SetHP(float InDamage);
+
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastRPC_Dead();
+
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastRPC_Revive();
 public:
     bool GetIsDead(){ return bIsDead; }
     void OnDamaged(int32 InDamage);
@@ -292,6 +301,7 @@ protected:
 #pragma endregion
 
 #pragma region Network
+    void PrintNetLog();
     void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 #pragma endregion
 
