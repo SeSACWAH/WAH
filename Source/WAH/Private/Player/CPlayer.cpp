@@ -86,6 +86,13 @@ ACPlayer::ACPlayer()
 
     ConstructorHelpers::FObjectFinder<UInputAction> tmpIARevival(TEXT("/Script/EnhancedInput.InputAction'/Game/DYL/Inputs/IA_Revival.IA_Revival'"));
     if (tmpIARevival.Succeeded()) IA_Revival = tmpIARevival.Object;
+
+    // TEST
+    ConstructorHelpers::FObjectFinder<UInputAction> tmpTestD(TEXT("/Script/EnhancedInput.InputAction'/Game/DYL/Inputs/IA_TestDamage.IA_TestDamage'"));
+    if (tmpTestD.Succeeded()) IA_TestDamage = tmpTestD.Object;
+
+    ConstructorHelpers::FObjectFinder<UInputAction> tmpTestR(TEXT("/Script/EnhancedInput.InputAction'/Game/DYL/Inputs/IA_TestRevival.IA_TestRevival'"));
+    if (tmpTestR.Succeeded()) IA_TestRevival = tmpTestR.Object;
 }
 
 void ACPlayer::BeginPlay()
@@ -142,6 +149,10 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
         inputSystem->BindAction(IA_Aim, ETriggerEvent::Completed, this, &ACPlayer::CompleteAim);
         inputSystem->BindAction(IA_Fire, ETriggerEvent::Started, this, &ACPlayer::DoFire);
         inputSystem->BindAction(IA_Revival, ETriggerEvent::Started, this, &ACPlayer::RevivalInputEntered);
+
+        // TEST
+        inputSystem->BindAction(IA_TestDamage, ETriggerEvent::Started, this, &ACPlayer::TestDamage);
+        inputSystem->BindAction(IA_TestRevival, ETriggerEvent::Started, this, &ACPlayer::TestRevival);
     }
 }
 
@@ -557,3 +568,17 @@ void ACPlayer::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 
     //DOREPLIFETIME(ACPlayer, );
 }
+
+#pragma region TEST
+void ACPlayer::TestDamage(const FInputActionValue& InValue)
+{
+    UE_LOG(LogTemp, Warning, TEXT("[DAMAGE TEST] DAMAGED!!! Current HP : %d"), 6);
+    OnDamaged(6);
+}
+
+void ACPlayer::TestRevival(const FInputActionValue& InValue)
+{
+    UE_LOG(LogTemp, Warning, TEXT("[REVIVAL TEST] DEAD!!! Current HP : %d"), 0);
+    OnDamaged(12);
+}
+#pragma endregion

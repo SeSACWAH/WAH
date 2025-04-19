@@ -295,4 +295,15 @@ protected:
     void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 #pragma endregion
 
+#pragma region TEST
+    // TEST
+    float DebugReviveTime = 0;
+    UPROPERTY(EditDefaultsOnly, Category = Input)
+    class UInputAction* IA_TestDamage;
+    UPROPERTY(EditDefaultsOnly, Category = Input)
+    class UInputAction* IA_TestRevival;
+    void TestDamage(const struct FInputActionValue& InValue);
+    void TestRevival(const struct FInputActionValue& InValue);
+#pragma endregion
+
 };
