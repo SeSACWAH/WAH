@@ -124,8 +124,11 @@ void ACPlayer::Tick(float DeltaTime)
         if(bIsGodMode) GodMode(DeltaTime);
     }
 
+    if (IsLocallyControlled())
+    {
         // Aim
         AdjustTargetArmLocation(DeltaTime);
+    }
 }
 
 void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
