@@ -111,18 +111,21 @@ void ACPlayer::Tick(float DeltaTime)
     // TEST
     PrintNetLog();
 
-    // Dash
-    if (bCanDash) DoDash(DeltaTime);
-    if (bCanResetDash) ResetDash(DeltaTime);
+    if (HasAuthority())
+    {
+        // Dash
+        if (bCanDash) DoDash(DeltaTime);
+        if (bCanResetDash) ResetDash(DeltaTime);
 
-    // Aim
-    AdjustTargetArmLocation(DeltaTime);
+        // Revive
+        if(bIsReviving) OnRevive(DeltaTime);
 
-    // Revive
-    if(bIsReviving) OnRevive(DeltaTime);
+        // God Mode
+        if(bIsGodMode) GodMode(DeltaTime);
+    }
 
-    // God Mode
-    if(bIsGodMode) GodMode(DeltaTime);
+        // Aim
+        AdjustTargetArmLocation(DeltaTime);
 }
 
 void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -399,6 +402,15 @@ void ACPlayer::StartDash(const FInputActionValue& InValue)
     if (bIsDead || bIsReviving) return;
     if (bCanDash || bCanResetDash) return;
 
+    ServerRPC_StartDash();
+    //DashStartPos = GetActorLocation();
+    //DashEndPos = GetActorLocation() + GetActorForwardVector() * DashDistance;
+
+    //bCanDash = true;
+}
+
+void ACPlayer::ServerRPC_StartDash_Implementation()
+{
     DashStartPos = GetActorLocation();
     DashEndPos = GetActorLocation() + GetActorForwardVector() * DashDistance;
 
@@ -637,6 +649,8 @@ void ACPlayer::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 
     //DOREPLIFETIME(ACPlayer, );
     DOREPLIFETIME(ACPlayer, HP);
+    DOREPLIFETIME(ACPlayer, bCanDash);
+    DOREPLIFETIME(ACPlayer, bCanResetDash);
 }
 
 #pragma region TEST

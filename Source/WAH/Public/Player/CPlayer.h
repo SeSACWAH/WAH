@@ -159,7 +159,9 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = Input)
     class UInputAction* IA_Dash;
 
+    UPROPERTY(Replicated)
     bool bCanDash = false;
+    UPROPERTY(Replicated)
     bool bCanResetDash = false;
 
     FVector DashStartPos;
@@ -179,6 +181,8 @@ protected:
     float DashCoolDownTime = 0.7f;
 
     void StartDash(const FInputActionValue& InValue);
+    UFUNCTION(Server, Reliable)
+    void ServerRPC_StartDash();
     void DoDash(float InDeltaTime);
     void ResetDash(float InDeltaTime);
 #pragma endregion
