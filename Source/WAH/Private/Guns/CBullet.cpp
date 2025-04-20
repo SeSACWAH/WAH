@@ -1,9 +1,13 @@
 #include "Guns/CBullet.h"
 #include "../../../../../../../Source/Runtime/Engine/Classes/Components/SphereComponent.h"
+#include "Net/UnrealNetwork.h"
 
 ACBullet::ACBullet()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	/* Network */
+	bReplicates = true;
 
 	/* Collision*/
 	BulletComp = CreateDefaultSubobject<USphereComponent>(TEXT("BulletComp"));
@@ -38,7 +42,10 @@ void ACBullet::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if(bCanMove) DoMoveBullet(DeltaTime);
+	if (HasAuthority())
+	{
+		if(bCanMove) DoMoveBullet(DeltaTime);
+	}
 }
 
 USphereComponent* ACBullet::GetBulletComp() const
@@ -99,3 +106,11 @@ void ACBullet::CompleteMoveBullet(FVector InDestination)
 //	CompleteMoveBullet(SweepResult.Location);
 //}
 
+void ACBullet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	//DOREPLIFETIME(ACBullet, );
+	DOREPLIFETIME(ACBullet, bCanMove);
+	DOREPLIFETIME(ACBullet, FireDestination);
+}

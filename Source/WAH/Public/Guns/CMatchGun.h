@@ -26,7 +26,11 @@ protected:
 	class USkeletalMeshComponent* GunMeshComp;
 
 	virtual void AddBulletToPool(bool bIsActivate) override;
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_AddBulletToPool(bool bIsActivate);
 	virtual void InitializeBulletPool() override;
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_InitializeBulletPool();
 
 public:
 	UPROPERTY(EditDefaultsOnly, Category = "Gun|Bullet")
@@ -38,6 +42,10 @@ public:
 	virtual USkeletalMeshComponent* GetGunMeshComp() override { return GunMeshComp; };
 	FVector GetFirePosition();
 	virtual void FireBullet(FVector InDestination) override;
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_FireBullet(FVector InDestination);
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastRPC_FireBullet(ACMatchBullet* InBullet, FVector InDestination, FVector InFirePosition);
 
 protected:
     UPROPERTY(EditDefaultsOnly, Category = "Gun|FX")

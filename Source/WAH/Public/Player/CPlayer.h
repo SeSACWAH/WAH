@@ -224,7 +224,9 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = Aim)
     float MouseSensitivityAim = MouseSensitivityDefault * 0.2f;
     
+    UPROPERTY(Replicated)
     bool bCanAim = false;   // Aim input이 들어왔는지 체크
+    UPROPERTY(Replicated)
     bool bCanZoom = false;
 
     //bool bCanAdjustTargetArmLength = false;
@@ -252,6 +254,7 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Aim|SphereTrace")
     float SphereTraceRadius = 10.f;
 
+    UPROPERTY(Replicated)
     FVector FireDestination = FVector::ZeroVector;
 
     virtual void InitCrosshairWidgets();
@@ -288,8 +291,8 @@ protected:
     //int32 CurrentBulletCount = MaxBulletCount;
 
     // CODY
-    float MaxSapAmount = 1;
-    float CurrentSapAmout = MaxSapAmount;
+    //float MaxSapAmount = 1;
+    //float CurrentSapAmout = MaxSapAmount;
 
     //bool bIsInFireDelayTime = false;
 
@@ -306,7 +309,7 @@ protected:
 
 #pragma region Network
     void PrintNetLog();
-    void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 #pragma endregion
 
 #pragma region TEST

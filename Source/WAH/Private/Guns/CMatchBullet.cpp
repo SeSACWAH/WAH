@@ -21,10 +21,23 @@ void ACMatchBullet::OnMatchBulletOverlap(UPrimitiveComponent* OverlappedComponen
 {
 	if (!bCanMove) return;
 
-	CompleteMoveBullet(SweepResult.Location);
+	if (HasAuthority())
+	{
+		CompleteMoveBullet(SweepResult.Location);
+	}
 }
 
 void ACMatchBullet::ActivateBullet(bool bIsActivate)
+{
+	ServerRPC_ActivateBullet(bIsActivate);
+	//BulletMesh->SetVisibility(bIsActivate);
+
+	//auto collision = bIsActivate ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::NoCollision;
+	//BulletComp->SetCollisionEnabled(collision);
+	////UE_LOG(LogTemp, Warning, TEXT("Visibility : %d / Collision : %d"), BulletComp->IsVisible(), collision);
+}
+
+void ACMatchBullet::ServerRPC_ActivateBullet_Implementation(bool bIsActivate)
 {
 	BulletMesh->SetVisibility(bIsActivate);
 
@@ -46,13 +59,26 @@ void ACMatchBullet::CompleteMoveBullet(FVector InDestination)
 {
     if (!bCanMove) return;
 
-    bCanMove = false;
-    SetActorLocation(InDestination);
+	ServerRPC_CompleteMoveBullet(InDestination);
+    //bCanMove = false;
+    //SetActorLocation(InDestination);
 
-    auto lambda = [&]() {
-        this->BulletMesh->SetVisibility(false);
-        GetWorld()->GetTimerManager().ClearTimer(DeactivateTimer);
-        };
-    GetWorld()->GetTimerManager().SetTimer(DeactivateTimer, lambda, BulletDieTime, false);
+    //auto lambda = [&]() {
+    //    this->BulletMesh->SetVisibility(false);
+    //    GetWorld()->GetTimerManager().ClearTimer(DeactivateTimer);
+    //    };
+    //GetWorld()->GetTimerManager().SetTimer(DeactivateTimer, lambda, BulletDieTime, false);
+}
+
+void ACMatchBullet::ServerRPC_CompleteMoveBullet_Implementation(FVector InDestination)
+{
+	bCanMove = false;
+	SetActorLocation(InDestination);
+
+	auto lambda = [&]() {
+		this->BulletMesh->SetVisibility(false);
+		GetWorld()->GetTimerManager().ClearTimer(DeactivateTimer);
+		};
+	GetWorld()->GetTimerManager().SetTimer(DeactivateTimer, lambda, BulletDieTime, false);
 }
 

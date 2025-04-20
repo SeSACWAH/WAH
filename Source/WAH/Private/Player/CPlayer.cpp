@@ -654,6 +654,9 @@ void ACPlayer::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
     DOREPLIFETIME(ACPlayer, HP);
     DOREPLIFETIME(ACPlayer, bCanDash);
     DOREPLIFETIME(ACPlayer, bCanResetDash);
+    DOREPLIFETIME(ACPlayer, FireDestination);
+    DOREPLIFETIME(ACPlayer, bCanAim);
+    DOREPLIFETIME(ACPlayer, bCanZoom);
 }
 
 #pragma region TEST

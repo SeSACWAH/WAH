@@ -31,8 +31,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Bullet")
 	float BulletDieTime = 3.f;
 
+	UPROPERTY(Replicated)
 	bool bCanMove = false;
 
+	UPROPERTY(Replicated)
 	FVector FireDestination;
 
 	FTimerHandle DeactivateTimer;
@@ -48,4 +50,8 @@ public:
 	virtual void ActivateBullet(bool bIsActivate);
 	virtual void DoMoveBullet(float InDeltaTime);
 	virtual void CompleteMoveBullet(FVector InDestination);
+
+#pragma region Network
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
+#pragma endregion
 };

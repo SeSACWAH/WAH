@@ -1,14 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Guns/CBullet.h"
 #include "CMatchBullet.generated.h"
 
-/**
- * 
- */
+
 UCLASS()
 class WAH_API ACMatchBullet : public ACBullet
 {
@@ -27,6 +23,10 @@ public:
 	virtual void SetCanMove(bool InResult) override { bCanMove = InResult; }
 
 	virtual void ActivateBullet(bool bIsActivate) override;
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_ActivateBullet(bool bIsActivate);
 	virtual void DoMoveBullet(float InDeltaTime) override;
 	virtual void CompleteMoveBullet(FVector InDestination) override;
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_CompleteMoveBullet(FVector InDestination);
 };
