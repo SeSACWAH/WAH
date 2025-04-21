@@ -16,5 +16,17 @@ class WAH_API ACCody : public ACPlayer
 	
 public:
 
-	FVector FireDest;
+	ACCody();
+
+	virtual void BeginPlay() override;
+
+	FVector FireDest = FVector::ZeroVector;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<class ACGun> GunBP;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class ACGun* Gun;
+
+	virtual void DoFire() override;
 };

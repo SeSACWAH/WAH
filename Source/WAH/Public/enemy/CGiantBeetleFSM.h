@@ -39,7 +39,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = FSM)
 	EBeetleState mState = EBeetleState::Idle;
 
-	UPROPERTY(VisibleAnywhere, Category = FSM)
+	UPROPERTY(VisibleAnywhere, Category = FSM, Replicated)
 	class ACPlayer* Target;
 	UPROPERTY(VisibleAnywhere, Category = FSM)
 	class ACPlayer* Player1;
@@ -47,6 +47,9 @@ public:
 	class ACPlayer* Player2;
 	UPROPERTY(VisibleAnywhere, Category = FSM)
 	class ACGiantBeetle* Me;
+
+	//UPROPERTY()
+	//class AAIController* ai;
 
 	UPROPERTY(EditDefaultsOnly, Category = FSM)
 	float IdleDelayTime = 1.0f;
@@ -88,6 +91,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Jump)
 	float JumpMinDistance = 200;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Jump)
+	float DamageDelayTime = 3;
+
+	float CurDMGTime = 0;
+
 	FVector JumpStartloc;
 	FVector JumpEndloc;
 	FVector JumpVelocity;
@@ -99,6 +107,10 @@ public:
 	int32 ChargeCnt = 0;
 
 	int32 TripleCnt = 0;
+
+	int32 MaxHP = 100;
+
+	int32 HP = MaxHP;
 
 	FVector TargetLoc;
 
@@ -119,5 +131,7 @@ public:
 
 	void Stomp();
 
-	
+	void OnDamageProcess(int32 damage);
+
+	//void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeTimeProps) const;
 };

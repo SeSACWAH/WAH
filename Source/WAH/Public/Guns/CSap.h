@@ -15,6 +15,7 @@ class WAH_API ACSap : public ACBullet
 	GENERATED_BODY()
 	
 public:
+	ACSap();
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
@@ -26,9 +27,20 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SapGravity = 500;
 
+	float SapGather = 0;
 
 	FVector SapVelocity;
 
-	virtual void DoMoveBullet(float InDeltaTime) override;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UProjectileMovementComponent* MoveComp;
+
+	void SetSapGather(float sapGather);
+
+	void Explosion();
+
+	float ExplosionRadius = 300;
+
+	UFUNCTION()
+    virtual void OnSapOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 };

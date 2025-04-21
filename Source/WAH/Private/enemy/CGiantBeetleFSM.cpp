@@ -10,6 +10,10 @@
 #include "enemy/CHollowCylinder.h"
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Net/UnrealNetwork.h"
+#include "EngineUtils.h"
+
+
 
 // Sets default values for this component's properties
 UCGiantBeetleFSM::UCGiantBeetleFSM()
@@ -35,6 +39,8 @@ void UCGiantBeetleFSM::BeginPlay()
 	// 플레이어
 	Player1 = Cast<ACPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(),0));
 	Player2 = Cast<ACPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(),0));
+
+	//ai = Cast<AAIController>(Me->GetController());
 }
 
 
@@ -229,11 +235,19 @@ void UCGiantBeetleFSM::TripleJumpState()
 
 void UCGiantBeetleFSM::DamagedState()
 {
-	if (Me->CurHP <= 0)
+	
+	CurDMGTime += GetWorld()->DeltaTimeSeconds;
+	
+	if (CurDMGTime > DamageDelayTime)
 	{
-		mState = EBeetleState::Die;
+		
+		mState = EBeetleState::Idle;
+
+		CurDMGTime = 0.0f;
+
+		//Anim->AnimState = mState;
+		ChargeCnt = 0;
 	}
-	ChargeCnt = 0;
 }
 
 void UCGiantBeetleFSM::DieState()
@@ -249,3 +263,24 @@ void UCGiantBeetleFSM::Stomp()
 	GetWorld()->SpawnActor<ACHollowCylinder>(ShockCylFac, spawnLoc, FRotator());
 }
 
+void UCGiantBeetleFSM::OnDamageProcess(int32 damage)
+{
+	HP -= damage;
+
+	if(HP>0)
+	{
+		mState = EBeetleState::Damaged;
+
+	}
+	else
+	{
+		mState = EBeetleState::Die;
+	}
+	
+}
+
+//void ACGiantBeetle::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeTimeProps) const
+//{
+//	Super::GetLifetimeReplicatedProps(OutLifeTimeProps);
+//	DOREPLIFETIME(UCGiantBeetleFSM, Target);
+//}

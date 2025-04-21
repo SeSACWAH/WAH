@@ -6,6 +6,8 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/BoxComponent.h"
 #include "Player/CPlayer.h"
+#include "EngineUtils.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 ACGiantBeetle::ACGiantBeetle()
@@ -25,6 +27,8 @@ ACGiantBeetle::ACGiantBeetle()
 	AttackBox->SetCollisionProfileName(TEXT("AttackBox"));
 	AttackBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	AttackBox->OnComponentBeginOverlap.AddDynamic(this, &ACGiantBeetle::OnAttackBoxOverlap);
+
+	bReplicates = true;
 }
 
 // Called when the game starts or when spawned
@@ -50,5 +54,12 @@ void ACGiantBeetle::OnAttackBoxOverlap(UPrimitiveComponent* OverlappedComponent,
 		player->OnDamaged(12);
 		bKill = true;
 	}
+}
+
+void ACGiantBeetle::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ACGiantBeetle, CurHP);
+	//DOREPLIFETIME(ACGiantBeetle, fsm->Target);
 }
 
