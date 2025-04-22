@@ -70,27 +70,15 @@ void ACMatchBullet::CompleteMoveBullet(FVector InDestination)
 {
     if (!bCanMove) return;
 
-	ServerRPC_CompleteMoveBullet(InDestination);
-    //bCanMove = false;
-    //SetActorLocation(InDestination);
+	//ServerRPC_CompleteMoveBullet(InDestination);
+    bCanMove = false;
+    SetActorLocation(InDestination);
 
-    //auto lambda = [&]() {
-    //    this->BulletMesh->SetVisibility(false);
-    //    GetWorld()->GetTimerManager().ClearTimer(DeactivateTimer);
-    //    };
-    //GetWorld()->GetTimerManager().SetTimer(DeactivateTimer, lambda, BulletDieTime, false);
-}
-
-void ACMatchBullet::ServerRPC_CompleteMoveBullet_Implementation(FVector InDestination)
-{
-	bCanMove = false;
-	SetActorLocation(InDestination);
-
-	auto lambda = [&]() {
-		this->BulletMesh->SetVisibility(false);
-		GetWorld()->GetTimerManager().ClearTimer(DeactivateTimer);
-		};
-	GetWorld()->GetTimerManager().SetTimer(DeactivateTimer, lambda, BulletDieTime, false);
+    auto lambda = [&]() {
+        this->BulletMesh->SetVisibility(false);
+        GetWorld()->GetTimerManager().ClearTimer(DeactivateTimer);
+        };
+    GetWorld()->GetTimerManager().SetTimer(DeactivateTimer, lambda, BulletDieTime, false);
 }
 
 

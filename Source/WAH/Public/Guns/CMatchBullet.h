@@ -32,6 +32,4 @@ public:
 	void MultiRPC_ActivateBullet(bool bIsActivate);
 	virtual void DoMoveBullet(float InDeltaTime) override;
 	virtual void CompleteMoveBullet(FVector InDestination) override;
-	UFUNCTION(Server, Reliable)
-	void ServerRPC_CompleteMoveBullet(FVector InDestination);
 };
