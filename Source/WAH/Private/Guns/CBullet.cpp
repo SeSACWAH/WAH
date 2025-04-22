@@ -8,6 +8,7 @@ ACBullet::ACBullet()
 
 	/* Network */
 	bReplicates = true;
+	SetReplicateMovement(true);
 
 	/* Collision*/
 	BulletComp = CreateDefaultSubobject<USphereComponent>(TEXT("BulletComp"));

@@ -21,8 +21,14 @@ void ACMay::BeginPlay()
 {
     Super::BeginPlay();
 
-    InitCrosshairWidgets();
-    AttachGun();
+    if (IsLocallyControlled())
+    {
+        InitCrosshairWidgets();
+    }
+    if (HasAuthority())
+    {
+        AttachGun();
+    }
 }
 
 void ACMay::Tick(float DeltaTime)
@@ -35,66 +41,26 @@ void ACMay::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
     Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
-void ACMay::DoFire()
-{
-    if (bIsDead || bIsReviving) return;
-
-    // Aim 모드가 아니거나, 총알이 전부 소진되었거나, Fire 중이라면
-    if (!bCanAim || CurrentBulletCount == 0 || bIsInFireDelayTime) return;
-
-    ServerRPC_DoFire();
-    //// UE_LOG(LogTemp, Error, TEXT(">>>>> Fire Input Entered <<<<<"));
-    //CurrentBulletCount--;
-    //MatchGun->FireBullet(FireDestination);
-    //bIsInFireDelayTime = true;
-    //// UE_LOG(LogTemp, Error, TEXT(">>> Current Bullet : %d"), CurrentBulletCount);
-
-    //// Fire Delay Time 동안에는 Fire 불가
-    //FTimerHandle fireDelayTimer;
-    //auto fireDelayLambda = [&]() { bIsInFireDelayTime = false; };
-    //GetWorld()->GetTimerManager().SetTimer(fireDelayTimer, fireDelayLambda, FireDelayTime, false);
-
-    //// 일정 시간이 지나면 Ammo 자동 충전
-    //FTimerHandle chargeAmmoTimer;
-    //auto chargeAmmoLambda = [&]() {
-    //    if (CurrentBulletCount >= MaxBulletCount) return;
-    //    CurrentBulletCount++;
-    //    // UE_LOG(LogTemp, Error, TEXT(">>> Current Bullet : %d"), CurrentBulletCount);
-    //    };
-    //GetWorld()->GetTimerManager().SetTimer(chargeAmmoTimer, chargeAmmoLambda, ChargeAmmoTime, false);
-}
-
-void ACMay::ServerRPC_DoFire_Implementation()
-{
-    // UE_LOG(LogTemp, Error, TEXT(">>>>> Fire Input Entered <<<<<"));
-    CurrentBulletCount--;
-    MatchGun->FireBullet(FireDestination);
-    bIsInFireDelayTime = true;
-    // UE_LOG(LogTemp, Error, TEXT(">>> Current Bullet : %d"), CurrentBulletCount);
-
-    // Fire Delay Time 동안에는 Fire 불가
-    FTimerHandle fireDelayTimer;
-    auto fireDelayLambda = [&]() { bIsInFireDelayTime = false; };
-    GetWorld()->GetTimerManager().SetTimer(fireDelayTimer, fireDelayLambda, FireDelayTime, false);
-
-    // 일정 시간이 지나면 Ammo 자동 충전
-    FTimerHandle chargeAmmoTimer;
-    auto chargeAmmoLambda = [&]() {
-        if (CurrentBulletCount >= MaxBulletCount) return;
-        CurrentBulletCount++;
-        // UE_LOG(LogTemp, Error, TEXT(">>> Current Bullet : %d"), CurrentBulletCount);
-        };
-    GetWorld()->GetTimerManager().SetTimer(chargeAmmoTimer, chargeAmmoLambda, ChargeAmmoTime, false);
-}
 
 void ACMay::AttachGun()
 {
     if (MatchBP)
     {
         MatchGun = GetWorld()->SpawnActor<ACMatchGun>(MatchBP);
-        if (MatchGun) MatchGun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("GunSocket"));
-        //UE_LOG(LogTemp, Error, TEXT(">>> Attach Gun Success"));
+        if (MatchGun) 
+        {
+            MatchGun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("GunSocket"));
+            MatchGun->SetOwner(this);
+            MatchGun->SetInstigator(GetInstigator());
+            MatchGun->InitializeBulletPool();
+        }
+        UE_LOG(LogTemp, Error, TEXT(">>> Attach Gun Success"));
     }
+}
+
+void ACMay::ServerRPC_GetAimPosition_Implementation()
+{
+    AimPosition = MatchGun->GetFirePosition();
 }
 
 void ACMay::InitCrosshairWidgets()
@@ -171,7 +137,8 @@ void ACMay::TriggerAim(const FInputActionValue& InValue)
 {
     if (bIsDead || bIsDamaged || bIsReviving) return;
 
-    FVector startPos = MatchGun->GetFirePosition();
+    ServerRPC_GetAimPosition();
+    FVector startPos = AimPosition;
     FVector endPos = startPos + PlayerCamear->GetForwardVector() * SphereTraceDistance;
 
     FHitResult hitResult;
@@ -180,7 +147,7 @@ void ACMay::TriggerAim(const FInputActionValue& InValue)
 
     bool bHit = UKismetSystemLibrary::SphereTraceSingle(this, startPos, endPos, SphereTraceRadius, UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_GameTraceChannel6), false, actorsToIgnore, EDrawDebugTrace::ForDuration, hitResult, true, FColor::Purple, FColor::Orange, 0.3f);
 
-    FVector fireDestination;
+    FVector fireDestination = FVector::Zero();
 
     if (bHit)
     {
@@ -266,6 +233,59 @@ void ACMay::OnDead()
     MatchGun->GetGunMeshComp()->SetVisibility(false);
 }
 
+
+void ACMay::DoFire()
+{
+    if (bIsDead || bIsReviving) return;
+
+    // Aim 모드가 아니거나, 총알이 전부 소진되었거나, Fire 중이라면
+    if (!bCanAim || CurrentBulletCount == 0 || bIsInFireDelayTime) return;
+
+    ServerRPC_DoFire();
+    //// UE_LOG(LogTemp, Error, TEXT(">>>>> Fire Input Entered <<<<<"));
+    //CurrentBulletCount--;
+    //MatchGun->FireBullet(FireDestination);
+    //bIsInFireDelayTime = true;
+    //// UE_LOG(LogTemp, Error, TEXT(">>> Current Bullet : %d"), CurrentBulletCount);
+
+    //// Fire Delay Time 동안에는 Fire 불가
+    //FTimerHandle fireDelayTimer;
+    //auto fireDelayLambda = [&]() { bIsInFireDelayTime = false; };
+    //GetWorld()->GetTimerManager().SetTimer(fireDelayTimer, fireDelayLambda, FireDelayTime, false);
+
+    //// 일정 시간이 지나면 Ammo 자동 충전
+    //FTimerHandle chargeAmmoTimer;
+    //auto chargeAmmoLambda = [&]() {
+    //    if (CurrentBulletCount >= MaxBulletCount) return;
+    //    CurrentBulletCount++;
+    //    // UE_LOG(LogTemp, Error, TEXT(">>> Current Bullet : %d"), CurrentBulletCount);
+    //    };
+    //GetWorld()->GetTimerManager().SetTimer(chargeAmmoTimer, chargeAmmoLambda, ChargeAmmoTime, false);
+}
+
+void ACMay::ServerRPC_DoFire_Implementation()
+{
+    // UE_LOG(LogTemp, Error, TEXT(">>>>> Fire Input Entered <<<<<"));
+    CurrentBulletCount--;
+    MatchGun->FireBullet(FireDestination);
+    bIsInFireDelayTime = true;
+    // UE_LOG(LogTemp, Error, TEXT(">>> Current Bullet : %d"), CurrentBulletCount);
+
+    // Fire Delay Time 동안에는 Fire 불가
+    FTimerHandle fireDelayTimer;
+    auto fireDelayLambda = [&]() { bIsInFireDelayTime = false; };
+    GetWorld()->GetTimerManager().SetTimer(fireDelayTimer, fireDelayLambda, FireDelayTime, false);
+
+    // 일정 시간이 지나면 Ammo 자동 충전
+    FTimerHandle chargeAmmoTimer;
+    auto chargeAmmoLambda = [&]() {
+        if (CurrentBulletCount >= MaxBulletCount) return;
+        CurrentBulletCount++;
+        // UE_LOG(LogTemp, Error, TEXT(">>> Current Bullet : %d"), CurrentBulletCount);
+        };
+    GetWorld()->GetTimerManager().SetTimer(chargeAmmoTimer, chargeAmmoLambda, ChargeAmmoTime, false);
+}
+
 void ACMay::OnRevive(float InDeltaTime)
 {
     Super::OnRevive(InDeltaTime);
@@ -284,4 +304,5 @@ void ACMay::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePro
     //DOREPLIFETIME(ACMay, );
     DOREPLIFETIME(ACMay, CurrentBulletCount);
     DOREPLIFETIME(ACMay, bIsInFireDelayTime);
+    DOREPLIFETIME(ACMay, AimPosition);
 }

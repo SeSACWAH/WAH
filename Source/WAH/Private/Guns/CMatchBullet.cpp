@@ -1,6 +1,7 @@
 #include "Guns/CMatchBullet.h"
 #include "../../../../../../../Source/Runtime/Engine/Classes/Components/SphereComponent.h"
 #include "../../../../../../../Plugins/FX/Niagara/Source/Niagara/Public/NiagaraComponent.h"
+#include "../../../../../../../Source/Runtime/Engine/Public/Net/UnrealNetwork.h"
 
 ACMatchBullet::ACMatchBullet()
 {
@@ -27,9 +28,17 @@ void ACMatchBullet::OnMatchBulletOverlap(UPrimitiveComponent* OverlappedComponen
 	}
 }
 
+void ACMatchBullet::OnRep_ActivateBullet()
+{
+
+}
+
 void ACMatchBullet::ActivateBullet(bool bIsActivate)
 {
-	ServerRPC_ActivateBullet(bIsActivate);
+	if (HasAuthority())
+	{
+		MultiRPC_ActivateBullet(bIsActivate);
+	}
 	//BulletMesh->SetVisibility(bIsActivate);
 
 	//auto collision = bIsActivate ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::NoCollision;
@@ -37,13 +46,15 @@ void ACMatchBullet::ActivateBullet(bool bIsActivate)
 	////UE_LOG(LogTemp, Warning, TEXT("Visibility : %d / Collision : %d"), BulletComp->IsVisible(), collision);
 }
 
-void ACMatchBullet::ServerRPC_ActivateBullet_Implementation(bool bIsActivate)
+void ACMatchBullet::MultiRPC_ActivateBullet_Implementation(bool bIsActivate)
 {
-	BulletMesh->SetVisibility(bIsActivate);
+	this->SetActorHiddenInGame(!bIsActivate);
+	//BulletComp->SetHiddenInGame(!bIsActivate);
+	//BulletMesh->SetVisibility(bIsActivate);
 
 	auto collision = bIsActivate ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::NoCollision;
 	BulletComp->SetCollisionEnabled(collision);
-	//UE_LOG(LogTemp, Warning, TEXT("Visibility : %d / Collision : %d"), BulletComp->IsVisible(), collision);
+	//UE_LOG(LogTemp, Warning, TEXT("isHidden : %d / Visibility : %d / Collision : %d"), BulletComp->IsHidden(), BulletComp->IsVisible(), collision);
 }
 
 void ACMatchBullet::DoMoveBullet(float InDeltaTime)
@@ -82,3 +93,11 @@ void ACMatchBullet::ServerRPC_CompleteMoveBullet_Implementation(FVector InDestin
 	GetWorld()->GetTimerManager().SetTimer(DeactivateTimer, lambda, BulletDieTime, false);
 }
 
+
+void ACMatchBullet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	//DOREPLIFETIME(ACMatchBullet, );
+	DOREPLIFETIME(ACMatchBullet, bIsActivated);
+}

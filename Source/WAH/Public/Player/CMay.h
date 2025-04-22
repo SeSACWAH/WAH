@@ -47,6 +47,11 @@ protected:
 #pragma endregion
 
 #pragma region Trigger Aim
+    UPROPERTY(Replicated)
+    FVector AimPosition;
+    UFUNCTION(Server, Reliable)
+    void ServerRPC_GetAimPosition();
+
     virtual void InitCrosshairWidgets() override;
     virtual void SetUnlockedCrosshairVisibility(bool bVisible);
     virtual void SetLockedCrosshairVisibility(bool bVisible);

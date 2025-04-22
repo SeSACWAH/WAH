@@ -4,6 +4,8 @@
 #include "../../../../../../../Plugins/FX/Niagara/Source/Niagara/Public/NiagaraComponent.h"
 #include "../../../../../../../Source/Runtime/Engine/Classes/Components/SkeletalMeshComponent.h"
 #include "Guns/CMatchBullet.h"
+#include "Player/CMay.h"
+#include "../../../../../../../Source/Runtime/Engine/Public/Net/UnrealNetwork.h"
 
 ACMatchGun::ACMatchGun()
 {
@@ -18,6 +20,11 @@ ACMatchGun::ACMatchGun()
 void ACMatchGun::BeginPlay()
 {
     Super::BeginPlay();
+	
+	//if (HasAuthority())
+	//{
+	//	InitializeBulletPool();
+	//}
 }
 
 void ACMatchGun::Tick(float DeltaTime)
@@ -28,66 +35,35 @@ void ACMatchGun::Tick(float DeltaTime)
 
 void ACMatchGun::AddBulletToPool(bool bIsActivate)
 {
-	ServerRPC_AddBulletToPool(bIsActivate);
-	//FActorSpawnParameters params;
-	//// 스폰 시 충돌이 생겨도 제자리에서 스폰되게 하는 기능
-	//params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	//if (GunMeshComp)
-	//{
-	//	FTransform firePosition = GunMeshComp->GetSocketTransform(TEXT("FirePosition"));
-	//	//UE_LOG(LogTemp, Warning, TEXT(">>>>> Socket Tranform : %s"), *GunMeshComp->GetSocketTransform(TEXT("FirePosition")).ToString());
-
-	//	ACMatchBullet* bullet = GetWorld()->SpawnActor<ACMatchBullet>(BulletSpawner, firePosition, params);
-
-	//	bullet->ActivateBullet(bIsActivate);
-	//	bullet->SetCanMove(bIsActivate);
-	//	BulletPool.Add(bullet);
-
-	//	//UE_LOG(LogTemp, Warning, TEXT("[%d] : Add Bullet To Pool"), BulletPool.Num());
-	//}
-}
-
-void ACMatchGun::ServerRPC_AddBulletToPool_Implementation(bool bIsActivate)
-{
-	if (HasAuthority())
+	FActorSpawnParameters params;
+	// 스폰 시 충돌이 생겨도 제자리에서 스폰되게 하는 기능
+	params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	// 총알 소유자를 총으로 명시
+	if (ACMay* may = Cast<ACMay>(GetOwner()))
 	{
-		FActorSpawnParameters params;
-		// 스폰 시 충돌이 생겨도 제자리에서 스폰되게 하는 기능
-		params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		params.Owner = may;
+	}
 
-		if (GunMeshComp)
-		{
-			FTransform firePosition = GunMeshComp->GetSocketTransform(TEXT("FirePosition"));
-			//UE_LOG(LogTemp, Warning, TEXT(">>>>> Socket Tranform : %s"), *GunMeshComp->GetSocketTransform(TEXT("FirePosition")).ToString());
+	if (GunMeshComp)
+	{
+		FTransform firePosition = GunMeshComp->GetSocketTransform(TEXT("FirePosition"));
+		//UE_LOG(LogTemp, Warning, TEXT(">>>>> Socket Tranform : %s"), *GunMeshComp->GetSocketTransform(TEXT("FirePosition")).ToString());
 
-			ACMatchBullet* bullet = GetWorld()->SpawnActor<ACMatchBullet>(BulletSpawner, firePosition, params);
+		ACMatchBullet* bullet = GetWorld()->SpawnActor<ACMatchBullet>(BulletSpawner, firePosition, params);
 
-			bullet->ActivateBullet(bIsActivate);
-			bullet->SetCanMove(bIsActivate);
-			BulletPool.Add(bullet);
+		bullet->ActivateBullet(bIsActivate);
+		bullet->SetCanMove(bIsActivate);
+		BulletPool.Add(bullet);
 
-			//UE_LOG(LogTemp, Warning, TEXT("[%d] : Add Bullet To Pool"), BulletPool.Num());
-		}
+		//UE_LOG(LogTemp, Warning, TEXT("[%d] : Add Bullet To Pool"), BulletPool.Num());
 	}
 }
 
 void ACMatchGun::InitializeBulletPool()
 {
-	ServerRPC_InitializeBulletPool();
-	//UE_LOG(LogTemp, Warning, TEXT(">>>>> %d : Initialize Bullet Poolw Start <<<<<"), BulletPool.Num());
-	//for (int32 i = 0; i < MaxBulletCnt; ++i) AddBulletToPool(false);
-	//UE_LOG(LogTemp, Warning, TEXT(">>>>> %d : Initialize Bullet Pool Complete <<<<<"), BulletPool.Num());
-}
-
-void ACMatchGun::ServerRPC_InitializeBulletPool_Implementation()
-{
-	if (HasAuthority())
-	{
-		UE_LOG(LogTemp, Warning, TEXT(">>>>> %d : Initialize Bullet Poolw Start <<<<<"), BulletPool.Num());
-		for (int32 i = 0; i < MaxBulletCnt; ++i) AddBulletToPool(false);
-		UE_LOG(LogTemp, Warning, TEXT(">>>>> %d : Initialize Bullet Pool Complete <<<<<"), BulletPool.Num());
-	}
+	UE_LOG(LogTemp, Warning, TEXT(">>>>> %d : Initialize Bullet Poolw Start <<<<<"), BulletPool.Num());
+	for (int32 i = 0; i < MaxBulletCnt; ++i) AddBulletToPool(false);
+	UE_LOG(LogTemp, Warning, TEXT(">>>>> %d : Initialize Bullet Pool Complete <<<<<"), BulletPool.Num());
 }
 
 FVector ACMatchGun::GetFirePosition()
@@ -150,27 +126,28 @@ void ACMatchGun::ServerRPC_FireBullet_Implementation(FVector InDestination)
 	for (auto bullet : BulletPool)
 	{
 		// 비활성화 된 총알이라면
-		if (!bullet->GetBulletMesh()->GetVisibleFlag())
+		if(bullet->IsHidden())
+		//if (!bullet->GetBulletMesh()->GetVisibleFlag())
 		{
 			// 활성화하고 총구 위치에 배치한다
 			bIsFound = true;
 
-			MulticastRPC_FireBullet(bullet, InDestination, firePosition);
-			//bullet->ActivateBullet(true);
-			////firePosition.SetScale3D(bullet->GetBulletComp()->GetComponentScale());
-			//bullet->SetActorLocation(firePosition);
-			//bullet->SetFireDestination(InDestination);
-			//bullet->SetCanMove(true);
+			FoundBullet = bullet;
+			//MulticastRPC_FireBullet(FoundBullet, InDestination, firePosition);
+			bullet->ActivateBullet(true);
+			bullet->SetActorLocation(firePosition);
+			bullet->SetFireDestination(InDestination);
+			bullet->SetCanMove(true);
 
-			//// 소리를 재생한다
-			//// UGameplayStatics::PlaySoundAtLocation(GetWorld(), FireSound, firePosition.GetLocation());
+			// 소리를 재생한다
+			// UGameplayStatics::PlaySoundAtLocation(GetWorld(), FireSound, firePosition.GetLocation());
 
-			//// FX를 재생한다
-			//// PlayFireFX();
+			// FX를 재생한다
+			// PlayFireFX();
 
-			////UE_LOG(LogTemp, Warning, TEXT("--------------SPAWN BULLET--------------"));
+			//UE_LOG(LogTemp, Warning, TEXT("--------------SPAWN BULLET--------------"));
 			
-			// 반복을 그만한다
+			//반복을 그만한다
 			break;
 		}
 	}
@@ -184,21 +161,28 @@ void ACMatchGun::ServerRPC_FireBullet_Implementation(FVector InDestination)
 	}
 }
 
-void ACMatchGun::MulticastRPC_FireBullet_Implementation(ACMatchBullet* InBullet, FVector InDestination, FVector InFirePosition)
+//void ACMatchGun::MulticastRPC_FireBullet_Implementation(ACMatchBullet* InBullet, FVector InDestination, FVector InFirePosition)
+//{
+//	FoundBullet = InBullet;
+//	FoundBullet->ActivateBullet(true);
+//	FoundBullet->SetActorLocation(InFirePosition);
+//	FoundBullet->SetFireDestination(InDestination);
+//	FoundBullet->SetCanMove(true);
+//
+//	// 소리를 재생한다
+//	// UGameplayStatics::PlaySoundAtLocation(GetWorld(), FireSound, firePosition.GetLocation());
+//
+//	// FX를 재생한다
+//	// PlayFireFX();
+//
+//	//UE_LOG(LogTemp, Warning, TEXT("--------------SPAWN BULLET--------------"));
+//}
+
+void ACMatchGun::PostNetInit()
 {
-	InBullet->ActivateBullet(true);
-	//firePosition.SetScale3D(bullet->GetBulletComp()->GetComponentScale());
-	InBullet->SetActorLocation(InFirePosition);
-	InBullet->SetFireDestination(InDestination);
-	InBullet->SetCanMove(true);
+	Super::PostNetInit();
 
-	// 소리를 재생한다
-	// UGameplayStatics::PlaySoundAtLocation(GetWorld(), FireSound, firePosition.GetLocation());
 
-	// FX를 재생한다
-	// PlayFireFX();
-
-	//UE_LOG(LogTemp, Warning, TEXT("--------------SPAWN BULLET--------------"));
 }
 
 void ACMatchGun::AddFireFXToPool(bool bIsActivate)
@@ -252,4 +236,13 @@ void ACMatchGun::PlayFireFX()
 void ACMatchGun::OnFireFXFinished(class UNiagaraComponent* InComp)
 {
 	InComp->Deactivate();
+}
+
+void ACMatchGun::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	//DOREPLIFETIME(ACMatchGun, );
+	DOREPLIFETIME(ACMatchGun, BulletPool);
+	DOREPLIFETIME(ACMatchGun, FoundBullet);
 }
