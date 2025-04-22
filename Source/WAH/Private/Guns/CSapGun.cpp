@@ -16,17 +16,14 @@ ACSapGun::ACSapGun()
 void ACSapGun::Fire()
 {
 	FTransform firePosition = GunMeshComp->GetSocketTransform(TEXT("FirePosition"));
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *firePosition.ToString());
 
 	FActorSpawnParameters params;
 	params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	GetWorld()->SpawnActor<ACSap>(SapFac, firePosition, params);
 	
-	UE_LOG(LogTemp, Warning, TEXT("SapSpawn"));
 }
 
 void ACSapGun::FireBullet(FVector InDestination)
 {
-	UE_LOG(LogTemp, Warning, TEXT("SapFire"));
 	Fire();
 }

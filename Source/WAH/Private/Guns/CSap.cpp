@@ -10,14 +10,20 @@
 #include "Guns/CMatchBullet.h"
 #include "enemy/CGiantBeetle.h"
 #include "enemy/CGiantBeetleFSM.h"
+#include "../../../../Plugins/FX/Niagara/Source/Niagara/Public/NiagaraFunctionLibrary.h"
+#include "../../../../Plugins/FX/Niagara/Source/Niagara/Public/NiagaraComponent.h"
 
 ACSap::ACSap()
 {
 	MoveComp = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("MoveComp"));
+	BulletComp->SetCollisionProfileName(TEXT("Sap"));
 	BulletComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	MoveComp->SetUpdatedComponent(RootComponent);
 
 	BulletComp->OnComponentBeginOverlap.AddDynamic(this, &ACSap::OnSapOverlap);
+
+	ConstructorHelpers::FObjectFinder<UNiagaraSystem> TempSystem(TEXT("/Script/Niagara.NiagaraSystem'/Game/CatalystVFX/ParticleSystems/NE_Explosion_Human_System.NE_Explosion_Human_System'"));
+	if(TempSystem.Succeeded()) ExplosionSys = TempSystem.Object;
 }
 
 void ACSap::BeginPlay()
@@ -40,47 +46,49 @@ void ACSap::SetSapGather(float sapGather)
 	SetActorScale3D(FVector(sapGather));
 }
 
-void ACSap::Explosion()
+void ACSap::Explosion(FVector lot)
 {
-	FHitResult HitInfos;
-	FVector CurPos = GetActorLocation();
-	FCollisionQueryParams params;
-	params.AddIgnoredActor(this);
-	
-	bool bHit = GetWorld()->SweepSingleByProfile(HitInfos, CurPos, CurPos, FQuat::Identity, TEXT(""), FCollisionShape::MakeSphere(ExplosionRadius), params);
-	
-	if(bHit)
-	{
-		auto enemy = HitInfos.GetActor()->GetDefaultSubobjectByName(TEXT("fsm"));
-		if(enemy)
-		{
-			auto enemyFSM = Cast<UCGiantBeetleFSM>(enemy);
-			enemyFSM->OnDamageProcess(30);
-		}
-	}
+	ExplosionComp = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ExplosionSys, lot);
 }
 
 void ACSap::OnSapOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	// beetle
+	auto beetle = Cast<ACGiantBeetle>(OtherActor);
+	if(beetle)
+	{
+		Destroy();
+		return;
+	}
 	// sap 
 	auto sap = Cast<ACSap>(OtherActor);
 	if(sap)
 	{
 		sap->SapGather++;
-		sap->SapGather = FMath::Clamp(sap->SapGather, 1, 3);
+		sap->SapGather = FMath::Clamp(sap->SapGather, 1, 3) / 2;
 		sap->SetSapGather(sap->SapGather);
-		Destroy();
+		if(SapGather == 0) Destroy();
+		return;
 	}
-
-	// ¹Ù´Ú
-	//auto floor = Cast
 
 	// ¼º³É
 	ACMatchBullet* matchBullet = Cast<ACMatchBullet>(OtherActor);
 	if(matchBullet)
 	{
-
-
+		Explosion(SweepResult.Location);
+		//ExplosionComp->Deactivate();
+		Destroy();
+		matchBullet->Destroy();
+		return;
+	}
+	
+	// ¹Ù´Ú
+	auto floor = Cast<AActor>(OtherActor);
+	if (floor)
+	{
+		MoveComp->StopMovementImmediately();
+		SetActorLocation(SweepResult.Location);
+		SapGather = 1;
 	}
 
 }

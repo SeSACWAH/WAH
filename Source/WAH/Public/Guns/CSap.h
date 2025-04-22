@@ -36,9 +36,15 @@ public:
 
 	void SetSapGather(float sapGather);
 
-	void Explosion();
+	void Explosion(FVector lot);
 
 	float ExplosionRadius = 300;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	class UNiagaraSystem* ExplosionSys;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	class UNiagaraComponent* ExplosionComp;
 
 	UFUNCTION()
     virtual void OnSapOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);

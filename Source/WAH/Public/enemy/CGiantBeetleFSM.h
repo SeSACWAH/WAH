@@ -133,5 +133,5 @@ public:
 
 	void OnDamageProcess(int32 damage);
 
-	//void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeTimeProps) const;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

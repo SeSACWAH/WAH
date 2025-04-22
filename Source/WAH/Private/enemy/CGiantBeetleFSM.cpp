@@ -38,8 +38,8 @@ void UCGiantBeetleFSM::BeginPlay()
 
 	// 플레이어
 	Player1 = Cast<ACPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(),0));
-	Player2 = Cast<ACPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(),0));
-
+	//Player2 = Cast<ACPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(),1));
+	Player2 = Player1;
 	//ai = Cast<AAIController>(Me->GetController());
 }
 
@@ -71,22 +71,39 @@ void UCGiantBeetleFSM::IdleState()
 
 	if (CurIdleTime > IdleDelayTime)
 	{
+		//Target = Target == Player1 ? Player2 : Player1;
 		mState = EBeetleState::Retarget;
 		CurIdleTime = 0.0f;
+		CurRotTime = 0.0f;
 	}
 }
 
 void UCGiantBeetleFSM::RetargetState()
 {
-	Target = Target == Player1 ? Player2 : Player1;
-	if(Target->GetIsDead()) Target = Target == Player1 ? Player2 : Player1;
-	TargetLoc = Target->GetActorLocation() + Me->GetActorForwardVector() * 100;
+	if(!Target)
+	{
+		TArray<AActor*> actors;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACharacter::StaticClass(), actors);
+		Target = Cast<ACPlayer>(actors[FMath::RandRange(0, actors.Num()-1)]);
+	}
+	//if(Target->GetIsDead()) Target = Target == Player1 ? Player2 : Player1;
+	TargetLoc = Target->GetActorLocation();
 	FRotator rot = UKismetMathLibrary::FindLookAtRotation(Me->GetActorLocation(),Target->GetActorLocation());
-	rot.Pitch = 0;
+	//rot.Pitch = 0;
+	//rot.Roll = 0;
+
+	FRotator r = FRotator(Me->GetActorRotation().Pitch, rot.Yaw, Me->GetActorRotation().Roll);
+
 	CurRotTime += GetWorld()->DeltaTimeSeconds;
-	FRotator newRot = FMath::Lerp(Me->GetActorRotation(), rot, CurRotTime/RotTime);
-	Me->SetActorRotation(newRot);
+	float ratio = CurRotTime / RotTime;
+	if( ratio > 1.0f )	ratio = 1.0f;
 	
+	FRotator newRot = FMath::Lerp(Me->GetActorRotation(), r, ratio);
+	Me->SetActorRotation(newRot);
+	//Me->SetActorRotation(rot);
+	
+	
+
 	if (CurRotTime >= RotTime)
 	{
 		if (Me->CurHP == Me->MaxHP)
@@ -100,7 +117,8 @@ void UCGiantBeetleFSM::RetargetState()
 			//JumpVelocityZ = JumpTotTime * JumpGravity / 2;
 			//mState = EBeetleState::TripleJump;
 			mState = EBeetleState::Charge;
-
+			CurRotTime = 0.0f;
+			return;
 		}
 		else
 		{
@@ -135,7 +153,12 @@ void UCGiantBeetleFSM::RetargetState()
 void UCGiantBeetleFSM::ChargeState()
 {
 	// 타겟이 죽어있으면 Retarget
-	if(Target->GetIsDead()) mState = EBeetleState::Retarget;
+	if(Target->GetIsDead()) 
+	{
+		mState = EBeetleState::Idle;
+		Target = nullptr;
+		return;
+	}
 	// 돌진
 	FVector curTargetLoc = Target->GetActorLocation();
 	FVector curPos = Me->GetActorLocation();
@@ -165,7 +188,7 @@ void UCGiantBeetleFSM::ChargeState()
 			newRot += FRotator(0, 1, 0) * ChargeCurve;
 		}
 	}
-	else
+	/*else
 	{
 		if (crossRes.Z > 10)
 		{
@@ -175,7 +198,7 @@ void UCGiantBeetleFSM::ChargeState()
 		{
 			newRot -= Me->GetActorRightVector().Rotation() * ChargeCurve;
 		}
-	}
+	}*/
 	Me->SetActorRelativeRotation(newRot);
 	Me->SetActorLocation(curPos + Me->GetActorForwardVector() * ChargeSpeed * GetWorld()->DeltaTimeSeconds);
 
@@ -185,6 +208,7 @@ void UCGiantBeetleFSM::ChargeState()
 		// 박치기를 실패하면 스톰프
 		if (!Me->bKill) Stomp();
 		mState = EBeetleState::Idle;
+		Target = nullptr;
 		ChargeCnt++;
 		Me->AttackBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		Me->bKill = false;
@@ -203,6 +227,7 @@ void UCGiantBeetleFSM::JumpToTargetState()
 		bWasTriple = false;
 		ChargeCnt = 0;
 		mState = EBeetleState::Idle;
+		Target = nullptr;
 		JumpCurTime = 0;
 	}
 	else
@@ -230,6 +255,7 @@ void UCGiantBeetleFSM::TripleJumpState()
 		TripleCnt = 0; 
 		ChargeCnt = 0;
 		mState = EBeetleState::Idle;
+		Target = nullptr;
 	}
 }
 
@@ -242,6 +268,7 @@ void UCGiantBeetleFSM::DamagedState()
 	{
 		
 		mState = EBeetleState::Idle;
+		Target = nullptr;
 
 		CurDMGTime = 0.0f;
 
@@ -279,8 +306,11 @@ void UCGiantBeetleFSM::OnDamageProcess(int32 damage)
 	
 }
 
-//void ACGiantBeetle::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeTimeProps) const
-//{
-//	Super::GetLifetimeReplicatedProps(OutLifeTimeProps);
-//	DOREPLIFETIME(UCGiantBeetleFSM, Target);
-//}
+void UCGiantBeetleFSM::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UCGiantBeetleFSM, Target);
+
+}
+

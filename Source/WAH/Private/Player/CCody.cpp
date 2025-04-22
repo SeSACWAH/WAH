@@ -4,6 +4,8 @@
 #include "Player/CCody.h"
 #include "Guns/CGun.h"
 #include "Guns/CSapGun.h"
+#include "Engine/GameViewportClient.h"
+#include "GameMapsSettings.h"
 
 ACCody::ACCody()
 {
@@ -17,12 +19,17 @@ void ACCody::BeginPlay()
 	Super::BeginPlay();
 	Gun = GetWorld()->SpawnActor<ACGun>(GunBP);
 	if (Gun) Gun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("GunSocket"));
+	
 }
 
 void ACCody::DoFire()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Fire"));
-	if(Gun)
+	ServerRPC_Fire();
+}
+
+void ACCody::ServerRPC_Fire_Implementation()
+{
+	if (Gun)
 	{
 		Gun->FireBullet(FireDest);
 	}

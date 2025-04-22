@@ -29,4 +29,8 @@ public:
 	class ACGun* Gun;
 
 	virtual void DoFire() override;
+
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_Fire();
 };
+
