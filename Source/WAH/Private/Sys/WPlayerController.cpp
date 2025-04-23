@@ -2,26 +2,45 @@
 
 
 #include "Sys/WPlayerController.h"
+#include "../../../../../../../Source/Runtime/UMG/Public/Blueprint/UserWidget.h"
+#include "CWAHGameMode.h"
+#include "../../../../../../../Source/Runtime/Engine/Public/Net/UnrealNetwork.h"
 
 void AWPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+}
 
-	if (!HasAuthority())
+void AWPlayerController::SetChooseUIRef(UUserWidget* InWidget)
+{
+	ChooseUI = InWidget;
+}
+
+void AWPlayerController::ServerRPC_RequestSpawn_Implementation(EPlayerRole InPlayerRole)
+{
+	SelectedRole = InPlayerRole;
+
+	if(ACWAHGameMode* gm = GetWorld()->GetAuthGameMode<ACWAHGameMode>())
+		gm->SpawnPlayerCharacter(this);
+
+		ClientRPC_RemoveChoosePlayerUI();
+}
+
+void AWPlayerController::ClientRPC_RemoveChoosePlayerUI_Implementation()
+{
+	if (ChooseUI)
 	{
-		bMay = true;
-		ServerRPC_ChangePlayer(bMay);
+		ChooseUI->RemoveFromParent();
+		ChooseUI->SetVisibility(ESlateVisibility::Hidden);
+		bShowMouseCursor = false;
+		this->SetInputMode(FInputModeGameOnly());
 	}
 }
 
-void AWPlayerController::ServerRPC_ChangePlayer_Implementation(bool IsMay)
+
+void AWPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	if (IsMay)
-	{
-		auto oldPawn = GetPawn();
-		UnPossess();
-		APawn* newChar = GetWorld()->SpawnActor<APawn>(PlayerFac, oldPawn->GetActorTransform());
-		Possess(newChar);
-		oldPawn->Destroy();
-	}
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AWPlayerController, SelectedRole);
 }

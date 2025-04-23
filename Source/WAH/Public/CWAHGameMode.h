@@ -13,5 +13,18 @@ UCLASS()
 class WAH_API ACWAHGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
-	
+
+protected:
+    UPROPERTY(EditDefaultsOnly, Category = "Class")
+    TSubclassOf<APawn> ClassCody;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Class")
+    TSubclassOf<APawn> ClassMay;
+
+public:
+    ACWAHGameMode();
+
+public:
+    UFUNCTION()
+    void SpawnPlayerCharacter(AController* Controller);
 };
