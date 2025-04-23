@@ -230,7 +230,16 @@ void ACMay::MulticastRPC_CompleteAim_Implementation()
 void ACMay::OnDead()
 {
     Super::OnDead();
-    MatchGun->GetGunMeshComp()->SetVisibility(false);
+    ServerRPC_AdjustGunVisibilityAndCollision(false);
+}
+
+
+void ACMay::ServerRPC_AdjustGunVisibilityAndCollision_Implementation(bool bIsTrue)
+{
+    MatchGun->SetActorHiddenInGame(!bIsTrue);
+
+    bIsTrue ? MatchGun->GetGunMeshComp()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics) :
+        MatchGun->GetGunMeshComp()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 
@@ -291,7 +300,7 @@ void ACMay::OnRevive(float InDeltaTime)
     Super::OnRevive(InDeltaTime);
     if (CurrentReviveTime >= RevivalTime)
     {
-        MatchGun->GetGunMeshComp()->SetVisibility(true);
+        ServerRPC_AdjustGunVisibilityAndCollision(true);
 
         //등장 FX Visible 켜기
     }

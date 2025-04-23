@@ -27,10 +27,14 @@ protected:
     UPROPERTY(ReplicatedUsing = OnRep_HP)
     int32 HP = MaxHP;
 
+    UPROPERTY(Replicated)
     bool bIsDamaged = false;
+    UPROPERTY(Replicated)
     bool bIsDead = false;
+    UPROPERTY(Replicated)
     bool bIsReviving = false;
     bool bIsRevivalInputEntered = false;
+    UPROPERTY(Replicated)
     bool bIsGodMode = false;
 
     UPROPERTY(EditDefaultsOnly, Category = Revival)
@@ -52,7 +56,7 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = Input)
     class UInputAction* IA_Revival;
 
-    //void RecoverHP();
+    void RecoverHP();
     void RevivalInputEntered(const struct FInputActionValue& InValue);
     void GodMode(float InDeltaTime);
 

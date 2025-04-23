@@ -74,6 +74,8 @@ protected:
 
 #pragma region Status
     virtual void OnDead() override;
+    UFUNCTION(Server, Reliable)
+    void ServerRPC_AdjustGunVisibilityAndCollision(bool bIsTrue);
     virtual void OnRevive(float InDeltaTime);
 #pragma endregion
 

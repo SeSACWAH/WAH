@@ -309,7 +309,6 @@ void ACPlayer::MulticastRPC_Dead_Implementation()
 
     GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, TEXT("[DEAD] Player DEAD!!!!!"));
     GetMesh()->SetVisibility(false);
-    //Gun->GetGunMeshComp()->SetVisibility(false);
     SetActorLocation(GetActorLocation() + -GetActorUpVector() * 100);
 
     // 죽음 FX의 Visibility를 켠다
@@ -332,7 +331,6 @@ void ACPlayer::MulticastRPC_Revive_Implementation()
     GEngine->AddOnScreenDebugMessage(1, 2, FColor::Red, TEXT("[REVIVAL] Player REVIVE Complete"));
 
     GetMesh()->SetVisibility(true);
-    //Gun->GetGunMeshComp()->SetVisibility(true);
 
     //등장 FX Visible 켜기
 
@@ -657,6 +655,11 @@ void ACPlayer::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
     DOREPLIFETIME(ACPlayer, FireDestination);
     DOREPLIFETIME(ACPlayer, bCanAim);
     DOREPLIFETIME(ACPlayer, bCanZoom);
+
+    DOREPLIFETIME(ACPlayer, bIsDamaged);
+    DOREPLIFETIME(ACPlayer, bIsDead);
+    DOREPLIFETIME(ACPlayer, bIsReviving);
+    DOREPLIFETIME(ACPlayer, bIsGodMode);
 }
 
 #pragma region TEST
