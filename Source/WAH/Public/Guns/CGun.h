@@ -25,7 +25,7 @@ protected:
 
 	// Bullet
 	UPROPERTY(EditDefaultsOnly, Category = "Gun|Bullet")
-	int32 MaxBulletCnt = 6;
+	int32 MaxBulletCnt = 1;
 
 	//UPROPERTY(EditDefaultsOnly, Category = "Gun|Bullet")
 	//TArray<class ACBullet*> BulletPool;

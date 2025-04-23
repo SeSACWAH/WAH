@@ -11,6 +11,10 @@ ACGun::ACGun()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	/* Network */
+	bReplicates = true;
+	SetReplicateMovement(true);
+
 	//// Gun
 	//GunMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>( TEXT("GunMeshComp") );
 	//SetRootComponent(GunMeshComp);
@@ -25,7 +29,7 @@ void ACGun::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	InitializeBulletPool();
+	//InitializeBulletPool();
 }
 
 void ACGun::Tick(float DeltaTime)

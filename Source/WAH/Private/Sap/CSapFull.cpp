@@ -1,10 +1,14 @@
 #include "Sap/CSapFull.h"
 #include "../../../../../../../Source/Runtime/Engine/Classes/Components/SphereComponent.h"
 #include "Guns/CBullet.h"
+#include "Guns/CMatchBullet.h"
 
 ACSapFull::ACSapFull()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	/* Network */
+	bReplicates = true;
 
 	/* Sap Comp */
 	SapComp = CreateDefaultSubobject<USphereComponent>(TEXT("SapComp"));
@@ -39,24 +43,49 @@ void ACSapFull::Tick(float DeltaTime)
 void ACSapFull::OnSapFullOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	UE_LOG(LogTemp, Warning, TEXT("--- Sap overlap ---"));
-	ACBullet* bullet = Cast<ACBullet>(OtherActor);
+	ACMatchBullet* matchBullet = Cast<ACMatchBullet>(OtherActor);
 
-	if (bullet)
+	if (matchBullet)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("--- Sap overlap222222 ---"));
-		// Destroy 효과가 발생한다
+		ServerRPC_MatchBulletOverlap(matchBullet);
+		//UE_LOG(LogTemp, Warning, TEXT("--- Match Sap overlap ---"));
+		//// Destroy 효과가 발생한다
 
-		// Bullet Mesh의 Visibility가 꺼진다
-		bullet->GetBulletMesh()->SetVisibility(false);
+		//// Bullet Mesh의 Visibility가 꺼진다
+		//matchBullet->GetBulletMesh()->SetVisibility(false);
 
-		// Bullet의 위치를 바꾼다
-		// Visibility만 끄니까 Sap에 붙어서 Collision 감지가 안됨
-		bullet->SetActorLocation(FVector(0, -100, 0));
+		//// Bullet의 위치를 바꾼다
+		//// Visibility만 끄니까 Sap에 붙어서 Collision 감지가 안됨
+		//matchBullet->SetActorLocation(FVector(0, -100, 0));
 
-		// SapFullMesh의 Visibility가 꺼진다
-		SapMeshComp->SetVisibility(false);
+		//// SapFull의 위치가 내려간다
 
-		// SapFull의 위치가 내려간다
-
+		//// SapFullMesh의 Visibility가 꺼진다
+		//SapMeshComp->SetVisibility(false);
 	}
 }
+
+void ACSapFull::ServerRPC_MatchBulletOverlap_Implementation(class ACMatchBullet* InMatchBullet)
+{
+	UE_LOG(LogTemp, Warning, TEXT("--- Match Sap overlap ---"));
+	// Destroy 효과가 발생한다
+
+	// Bullet Mesh를 Deactivate한다
+	InMatchBullet->ActivateBullet(false);
+
+	// Bullet의 위치를 바꾼다
+	// Visibility만 끄니까 Sap에 붙어서 Collision 감지가 안됨
+	InMatchBullet->SetActorLocation(FVector(0, -100, 0));
+
+	MulticastRPC_AdjustSapFullLocationAndVisibility();
+}
+
+void ACSapFull::MulticastRPC_AdjustSapFullLocationAndVisibility_Implementation()
+{
+	// SapFull의 위치가 내려간다
+	SapMeshComp->SetRelativeLocation(GetActorLocation() + FVector(0, -200, 0));
+
+	// SapFullMesh의 Visibility가 꺼진다
+	SapMeshComp->SetVisibility(false);
+}
+

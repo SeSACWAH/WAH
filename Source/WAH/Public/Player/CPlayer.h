@@ -23,14 +23,18 @@ protected:
     FTimerHandle DamageTimer;
     FTimerHandle RecoverTimer;
 
-
     int32 MaxHP = 12;
+    UPROPERTY(ReplicatedUsing = OnRep_HP)
     int32 HP = MaxHP;
 
+    UPROPERTY(Replicated)
     bool bIsDamaged = false;
+    UPROPERTY(Replicated)
     bool bIsDead = false;
+    UPROPERTY(Replicated)
     bool bIsReviving = false;
     bool bIsRevivalInputEntered = false;
+    UPROPERTY(Replicated)
     bool bIsGodMode = false;
 
     UPROPERTY(EditDefaultsOnly, Category = Revival)
@@ -58,6 +62,18 @@ protected:
 
     virtual void OnDead();
     virtual void OnRevive(float InDeltaTime);
+
+    UFUNCTION()
+    void OnRep_HP(int32 InDamage);
+
+    UFUNCTION(Server, Reliable)
+    void ServerRPC_SetHP(float InDamage);
+
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastRPC_Dead();
+
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastRPC_Revive();
 public:
     bool GetIsDead(){ return bIsDead; }
     void OnDamaged(int32 InDamage);
@@ -147,11 +163,15 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = Input)
     class UInputAction* IA_Dash;
 
+    UPROPERTY(Replicated)
     bool bCanDash = false;
+    UPROPERTY(Replicated)
     bool bCanResetDash = false;
 
     FVector DashStartPos;
     FVector DashEndPos;
+
+    FVector PrevPos;
 
     UPROPERTY(EditDefaultsOnly, Category = Dash)
     float DashDistance = 300.f;
@@ -165,6 +185,8 @@ protected:
     float DashCoolDownTime = 0.7f;
 
     void StartDash(const FInputActionValue& InValue);
+    UFUNCTION(Server, Reliable)
+    void ServerRPC_StartDash();
     void DoDash(float InDeltaTime);
     void ResetDash(float InDeltaTime);
 #pragma endregion
@@ -206,7 +228,9 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = Aim)
     float MouseSensitivityAim = MouseSensitivityDefault * 0.2f;
     
+    UPROPERTY(Replicated)
     bool bCanAim = false;   // Aim input이 들어왔는지 체크
+    UPROPERTY(Replicated)
     bool bCanZoom = false;
 
     //bool bCanAdjustTargetArmLength = false;
@@ -234,6 +258,7 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Aim|SphereTrace")
     float SphereTraceRadius = 10.f;
 
+    UPROPERTY(Replicated)
     FVector FireDestination = FVector::ZeroVector;
 
     virtual void InitCrosshairWidgets();
@@ -270,8 +295,8 @@ protected:
     //int32 CurrentBulletCount = MaxBulletCount;
 
     // CODY
-    float MaxSapAmount = 1;
-    float CurrentSapAmout = MaxSapAmount;
+    //float MaxSapAmount = 1;
+    //float CurrentSapAmout = MaxSapAmount;
 
     //bool bIsInFireDelayTime = false;
 
@@ -284,6 +309,22 @@ protected:
     //float ChargeAmmoTime = 3.5f;
 
     virtual void DoFire();
+#pragma endregion
+
+#pragma region Network
+    void PrintNetLog();
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
+#pragma endregion
+
+#pragma region TEST
+    // TEST
+    float DebugReviveTime = 0;
+    UPROPERTY(EditDefaultsOnly, Category = Input)
+    class UInputAction* IA_TestDamage;
+    UPROPERTY(EditDefaultsOnly, Category = Input)
+    class UInputAction* IA_TestRevival;
+    void TestDamage(const struct FInputActionValue& InValue);
+    void TestRevival(const struct FInputActionValue& InValue);
 #pragma endregion
 
 };

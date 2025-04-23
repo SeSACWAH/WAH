@@ -26,18 +26,28 @@ protected:
 	class USkeletalMeshComponent* GunMeshComp;
 
 	virtual void AddBulletToPool(bool bIsActivate) override;
+public:
 	virtual void InitializeBulletPool() override;
 
 public:
-	UPROPERTY(EditDefaultsOnly, Category = "Gun|Bullet")
+	UPROPERTY(Replicated, EditDefaultsOnly, Category = "Gun|Bullet")
 	TArray<class ACMatchBullet*> BulletPool;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Gun|Bullet")
 	TSubclassOf<class ACMatchBullet> BulletSpawner;
 
+	UPROPERTY(Replicated)
+	class ACMatchBullet* FoundBullet;
+
 	virtual USkeletalMeshComponent* GetGunMeshComp() override { return GunMeshComp; };
 	FVector GetFirePosition();
 	virtual void FireBullet(FVector InDestination) override;
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_FireBullet(FVector InDestination);
+	//UFUNCTION(NetMulticast, Reliable)
+	//void MulticastRPC_FireBullet(ACMatchBullet* InBullet, FVector InDestination, FVector InFirePosition);
+
+	virtual void PostNetInit() override;
 
 protected:
     UPROPERTY(EditDefaultsOnly, Category = "Gun|FX")
@@ -50,4 +60,5 @@ protected:
 	virtual void InitializeFireFXPool() override;
 	virtual void PlayFireFX() override;
 	virtual void OnFireFXFinished(class UNiagaraComponent* InComp) override;
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 };

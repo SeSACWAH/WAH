@@ -1,6 +1,7 @@
 #include "Guns/CMatchBullet.h"
 #include "../../../../../../../Source/Runtime/Engine/Classes/Components/SphereComponent.h"
 #include "../../../../../../../Plugins/FX/Niagara/Source/Niagara/Public/NiagaraComponent.h"
+#include "../../../../../../../Source/Runtime/Engine/Public/Net/UnrealNetwork.h"
 
 ACMatchBullet::ACMatchBullet()
 {
@@ -21,16 +22,39 @@ void ACMatchBullet::OnMatchBulletOverlap(UPrimitiveComponent* OverlappedComponen
 {
 	if (!bCanMove) return;
 
-	CompleteMoveBullet(SweepResult.Location);
+	if (HasAuthority())
+	{
+		CompleteMoveBullet(SweepResult.Location);
+	}
+}
+
+void ACMatchBullet::OnRep_ActivateBullet()
+{
+
 }
 
 void ACMatchBullet::ActivateBullet(bool bIsActivate)
 {
-	BulletMesh->SetVisibility(bIsActivate);
+	if (HasAuthority())
+	{
+		MultiRPC_ActivateBullet(bIsActivate);
+	}
+	//BulletMesh->SetVisibility(bIsActivate);
+
+	//auto collision = bIsActivate ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::NoCollision;
+	//BulletComp->SetCollisionEnabled(collision);
+	////UE_LOG(LogTemp, Warning, TEXT("Visibility : %d / Collision : %d"), BulletComp->IsVisible(), collision);
+}
+
+void ACMatchBullet::MultiRPC_ActivateBullet_Implementation(bool bIsActivate)
+{
+	this->SetActorHiddenInGame(!bIsActivate);
+	//BulletComp->SetHiddenInGame(!bIsActivate);
+	//BulletMesh->SetVisibility(bIsActivate);
 
 	auto collision = bIsActivate ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::NoCollision;
 	BulletComp->SetCollisionEnabled(collision);
-	//UE_LOG(LogTemp, Warning, TEXT("Visibility : %d / Collision : %d"), BulletComp->IsVisible(), collision);
+	//UE_LOG(LogTemp, Warning, TEXT("isHidden : %d / Visibility : %d / Collision : %d"), BulletComp->IsHidden(), BulletComp->IsVisible(), collision);
 }
 
 void ACMatchBullet::DoMoveBullet(float InDeltaTime)
@@ -46,6 +70,7 @@ void ACMatchBullet::CompleteMoveBullet(FVector InDestination)
 {
     if (!bCanMove) return;
 
+	//ServerRPC_CompleteMoveBullet(InDestination);
     bCanMove = false;
     SetActorLocation(InDestination);
 
@@ -56,3 +81,11 @@ void ACMatchBullet::CompleteMoveBullet(FVector InDestination)
     GetWorld()->GetTimerManager().SetTimer(DeactivateTimer, lambda, BulletDieTime, false);
 }
 
+
+void ACMatchBullet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	//DOREPLIFETIME(ACMatchBullet, );
+	DOREPLIFETIME(ACMatchBullet, bIsActivated);
+}
