@@ -15,11 +15,16 @@ ACMay::ACMay()
     // Skeleta Mesh
     ConstructorHelpers::FObjectFinder<USkeletalMesh> tmpMesh(TEXT("/Script/Engine.SkeletalMesh'/Game/Net/May/May.May'"));
     if(tmpMesh.Succeeded()) GetMesh()->SetSkeletalMesh(tmpMesh.Object);
+
+    // Spawn Point
+    SpawnPoint = FVector(-100,-100, 0);
+    SpawnRotation = FRotator(0, 0, 0);
 }
 
 void ACMay::BeginPlay()
 {
     Super::BeginPlay();
+    
 
     if (IsLocallyControlled())
     {

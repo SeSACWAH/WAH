@@ -20,6 +20,11 @@ protected:
 
 #pragma region Player State
 protected:
+    UPROPERTY(EditAnywhere, Category = Spawn)
+    FVector SpawnPoint = FVector::ZeroVector;
+    UPROPERTY(EditAnywhere, Category = Spawn)
+    FRotator SpawnRotation = FRotator::ZeroRotator;
+
     FTimerHandle DamageTimer;
     FTimerHandle RecoverTimer;
 
