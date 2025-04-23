@@ -334,8 +334,7 @@ void ACPlayer::MulticastRPC_Revive_Implementation()
 
     //등장 FX Visible 켜기
 
-    SetActorLocation(FVector(0));
-    SetActorRotation(FRotator(0, 180, 0));
+    SetActorLocationAndRotation(SpawnPoint, SpawnRotation);
 
     bIsReviving = false;
     bIsDead = false;
@@ -639,7 +638,7 @@ void ACPlayer::DoFire()
 void ACPlayer::PrintNetLog()
 {
     const FString ownerName = GetOwner() != nullptr ? GetOwner()->GetName() : TEXT("No Owner");
-    FString myLog = FString::Printf(TEXT("%s HP : %d"), *ownerName, HP);
+    FString myLog = FString::Printf(TEXT("%s HP : %d\nLocation : %s\nRotation : %s"), *ownerName, HP, *GetActorLocation().ToString(), *GetActorRotation().ToString());
 
     DrawDebugString(GetWorld(), GetActorLocation() + FVector::UpVector * 100.0f, myLog, nullptr, FColor::White, 0, true);
 }
