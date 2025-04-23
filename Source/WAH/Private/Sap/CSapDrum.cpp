@@ -43,6 +43,11 @@ void ACSapDrum::Tick(float DeltaTime)
 
 void ACSapDrum::Explosion()
 {
+	ServerRPC_Explosion();
+}
+
+void ACSapDrum::ServerRPC_Explosion_Implementation()
+{
 	FHitResult HitInfos;
 	FVector CurPos = GetActorLocation();
 	FCollisionQueryParams params;
@@ -50,7 +55,7 @@ void ACSapDrum::Explosion()
 
 	bool bHit = GetWorld()->SweepSingleByProfile(HitInfos, CurPos, CurPos, FQuat::Identity, TEXT(""), FCollisionShape::MakeSphere(ExplosionRadius), params);
 
-	ExplosionComp = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ExplosionSys, HitInfos.Location);
+	MultiRPC_Explosion(bHit);
 
 	if (bHit)
 	{
@@ -61,6 +66,11 @@ void ACSapDrum::Explosion()
 			enemyFSM->OnDamageProcess(30);
 		}
 	}
+}
+
+void ACSapDrum::MultiRPC_Explosion_Implementation(bool bHit)
+{
+	ExplosionComp = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ExplosionSys, GetActorLocation());
 }
 
 void ACSapDrum::OnSapDrumOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -82,9 +92,8 @@ void ACSapDrum::OnSapDrumOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 			Explosion();
 			//ExplosionComp->Deactivate();
 			SapGauge = 0;
-			match->Destroy();
-			return;
 		}
+		match->ActivateBullet(false);
 	}
 }
 

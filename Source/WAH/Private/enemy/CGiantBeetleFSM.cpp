@@ -72,6 +72,12 @@ void UCGiantBeetleFSM::IdleState()
 	if (CurIdleTime > IdleDelayTime)
 	{
 		//Target = Target == Player1 ? Player2 : Player1;
+		if (!Target && Me->HasAuthority())
+		{
+			TArray<AActor*> actors;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACharacter::StaticClass(), actors);
+			Target = Cast<ACPlayer>(actors[FMath::RandRange(0, actors.Num() - 1)]);
+		}
 		mState = EBeetleState::Retarget;
 		CurIdleTime = 0.0f;
 		CurRotTime = 0.0f;
@@ -80,13 +86,14 @@ void UCGiantBeetleFSM::IdleState()
 
 void UCGiantBeetleFSM::RetargetState()
 {
-	if(!Target)
+	/*if(!Target && Me->HasAuthority())
 	{
 		TArray<AActor*> actors;
 		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACharacter::StaticClass(), actors);
 		Target = Cast<ACPlayer>(actors[FMath::RandRange(0, actors.Num()-1)]);
-	}
+	}*/
 	//if(Target->GetIsDead()) Target = Target == Player1 ? Player2 : Player1;
+	if(!Me->HasAuthority()) return;
 	TargetLoc = Target->GetActorLocation();
 	FRotator rot = UKismetMathLibrary::FindLookAtRotation(Me->GetActorLocation(),Target->GetActorLocation());
 	//rot.Pitch = 0;
@@ -289,7 +296,7 @@ void UCGiantBeetleFSM::Stomp()
 	//FVector spawnLoc = Me->GetActorLocation();
 	//spawnLoc.Z = 0;
 	//GetWorld()->SpawnActor<ACHollowCylinder>(ShockCylFac, spawnLoc, FRotator());
-	MultiRPC_Stomp();
+	ServerRPC_Stomp();
 }
 
 void UCGiantBeetleFSM::OnDamageProcess(int32 damage)
@@ -306,6 +313,11 @@ void UCGiantBeetleFSM::OnDamageProcess(int32 damage)
 		mState = EBeetleState::Die;
 	}
 	
+}
+
+void UCGiantBeetleFSM::ServerRPC_Stomp_Implementation()
+{
+	MultiRPC_Stomp();
 }
 
 void UCGiantBeetleFSM::MultiRPC_Stomp_Implementation()

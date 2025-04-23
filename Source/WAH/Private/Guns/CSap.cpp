@@ -78,7 +78,7 @@ void ACSap::OnSapOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other
 		Explosion(SweepResult.Location);
 		//ExplosionComp->Deactivate();
 		Destroy();
-		matchBullet->Destroy();
+		matchBullet->ActivateBullet(false);
 		return;
 	}
 	

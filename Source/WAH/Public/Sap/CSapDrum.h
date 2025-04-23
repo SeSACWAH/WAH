@@ -45,6 +45,12 @@ public:
 
 	float ExplosionRadius = 300;
 
+	UFUNCTION(Server, Unreliable)
+	void ServerRPC_Explosion();
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MultiRPC_Explosion(bool bHit);
+
 	UFUNCTION()
 	void OnSapDrumOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 };

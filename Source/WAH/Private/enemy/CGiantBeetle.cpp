@@ -60,6 +60,6 @@ void ACGiantBeetle::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ACGiantBeetle, CurHP);
-	//DOREPLIFETIME(ACGiantBeetle, fsm->Target);
+	DOREPLIFETIME(ACGiantBeetle, bKill);
 }
 

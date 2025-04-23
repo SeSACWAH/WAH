@@ -36,10 +36,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	float CurHP = MaxHP;
 
+	UPROPERTY(Replicated)
 	bool bKill = false;
 
 	UFUNCTION()
 	void OnAttackBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
-	//void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 };

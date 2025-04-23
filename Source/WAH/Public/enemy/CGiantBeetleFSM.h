@@ -48,8 +48,8 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = FSM)
 	class ACGiantBeetle* Me;
 
-	//UPROPERTY()
-	//class AAIController* ai;
+	UPROPERTY()
+	class AAIController* ai;
 
 	UPROPERTY(EditDefaultsOnly, Category = FSM)
 	float IdleDelayTime = 1.0f;
@@ -133,6 +133,9 @@ public:
 	void Stomp();
 
 	void OnDamageProcess(int32 damage);
+
+	UFUNCTION(Server, Unreliable)
+	void ServerRPC_Stomp();
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void MultiRPC_Stomp();
