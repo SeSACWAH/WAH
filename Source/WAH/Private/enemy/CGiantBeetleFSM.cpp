@@ -159,6 +159,7 @@ void UCGiantBeetleFSM::ChargeState()
 		Target = nullptr;
 		return;
 	}
+	
 	// 돌진
 	FVector curTargetLoc = Target->GetActorLocation();
 	FVector curPos = Me->GetActorLocation();
@@ -175,9 +176,9 @@ void UCGiantBeetleFSM::ChargeState()
 	//Me->SetActorLocation(curPos);
 
 	// 약간 커브이동
-	FRotator newRot = Me->GetActorRotation();
+	//FRotator newRot = Me->GetActorRotation();
 
-	if (dotRes >= 0)
+	/*if (dotRes >= 0)
 	{
 		if ( crossRes.Z >10)
 		{
@@ -188,7 +189,7 @@ void UCGiantBeetleFSM::ChargeState()
 			newRot += FRotator(0, 1, 0) * ChargeCurve;
 		}
 	}
-	/*else
+	else
 	{
 		if (crossRes.Z > 10)
 		{
@@ -199,7 +200,7 @@ void UCGiantBeetleFSM::ChargeState()
 			newRot -= Me->GetActorRightVector().Rotation() * ChargeCurve;
 		}
 	}*/
-	Me->SetActorRelativeRotation(newRot);
+	//Me->SetActorRelativeRotation(newRot);
 	Me->SetActorLocation(curPos + Me->GetActorForwardVector() * ChargeSpeed * GetWorld()->DeltaTimeSeconds);
 
 	// 위치에 도달하면
@@ -285,9 +286,10 @@ void UCGiantBeetleFSM::DieState()
 void UCGiantBeetleFSM::Stomp()
 {
 	//GetWorld()->SpawnActor<ACShockwave>(ShockwaveFac, Me->GetActorTransform());
-	FVector spawnLoc = Me->GetActorLocation();
-	spawnLoc.Z = 0;
-	GetWorld()->SpawnActor<ACHollowCylinder>(ShockCylFac, spawnLoc, FRotator());
+	//FVector spawnLoc = Me->GetActorLocation();
+	//spawnLoc.Z = 0;
+	//GetWorld()->SpawnActor<ACHollowCylinder>(ShockCylFac, spawnLoc, FRotator());
+	MultiRPC_Stomp();
 }
 
 void UCGiantBeetleFSM::OnDamageProcess(int32 damage)
@@ -306,11 +308,20 @@ void UCGiantBeetleFSM::OnDamageProcess(int32 damage)
 	
 }
 
+void UCGiantBeetleFSM::MultiRPC_Stomp_Implementation()
+{
+	FVector spawnLoc = Me->GetActorLocation();
+	spawnLoc.Z = 0;
+	GetWorld()->SpawnActor<ACHollowCylinder>(ShockCylFac, spawnLoc, FRotator());
+}
+
 void UCGiantBeetleFSM::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UCGiantBeetleFSM, Target);
+	DOREPLIFETIME(UCGiantBeetleFSM, MaxChargeCnt);
+	DOREPLIFETIME(UCGiantBeetleFSM, HP);
 
 }
 

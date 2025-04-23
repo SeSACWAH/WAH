@@ -101,7 +101,7 @@ public:
 	FVector JumpVelocity;
 
 
-	UPROPERTY(EditDefaultsOnly, Category = FSM)
+	UPROPERTY(EditDefaultsOnly, Category = FSM, Replicated)
 	int32 MaxChargeCnt = 2;
 
 	int32 ChargeCnt = 0;
@@ -110,6 +110,7 @@ public:
 
 	int32 MaxHP = 100;
 
+	UPROPERTY(Replicated)
 	int32 HP = MaxHP;
 
 	FVector TargetLoc;
@@ -132,6 +133,9 @@ public:
 	void Stomp();
 
 	void OnDamageProcess(int32 damage);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MultiRPC_Stomp();
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };
