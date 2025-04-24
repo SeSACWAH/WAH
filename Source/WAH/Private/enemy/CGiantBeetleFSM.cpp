@@ -52,7 +52,7 @@ void UCGiantBeetleFSM::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	// 상태 확인용
 	FString logMsg = UEnum::GetValueAsString(mState);
 	GEngine->AddOnScreenDebugMessage(0, 1, FColor::Red, logMsg);
-
+	if (!Me->HasAuthority()) return;
 	switch (mState)
 	{
 		case EBeetleState::Idle:			{ IdleState();	} break;
@@ -270,11 +270,11 @@ void UCGiantBeetleFSM::TripleJumpState()
 void UCGiantBeetleFSM::DamagedState()
 {
 	
+	Me->SetActorLocation(Me->GetActorLocation());
 	CurDMGTime += GetWorld()->DeltaTimeSeconds;
 	
 	if (CurDMGTime > DamageDelayTime)
 	{
-		
 		mState = EBeetleState::Idle;
 		Target = nullptr;
 
@@ -301,18 +301,7 @@ void UCGiantBeetleFSM::Stomp()
 
 void UCGiantBeetleFSM::OnDamageProcess(int32 damage)
 {
-	HP -= damage;
-
-	if(HP>0)
-	{
-		mState = EBeetleState::Damaged;
-
-	}
-	else
-	{
-		mState = EBeetleState::Die;
-	}
-	
+	ServerRPC_OnDamage(damage);
 }
 
 void UCGiantBeetleFSM::ServerRPC_Stomp_Implementation()
@@ -325,6 +314,26 @@ void UCGiantBeetleFSM::MultiRPC_Stomp_Implementation()
 	FVector spawnLoc = Me->GetActorLocation();
 	spawnLoc.Z = 0;
 	GetWorld()->SpawnActor<ACHollowCylinder>(ShockCylFac, spawnLoc, FRotator());
+}
+
+void UCGiantBeetleFSM::ServerRPC_OnDamage_Implementation(int32 damage)
+{
+	Me->CurHP -= damage;
+
+	if (Me->CurHP > 0)
+	{
+		mState = EBeetleState::Damaged;
+
+	}
+	else
+	{
+		mState = EBeetleState::Die;
+	}
+}
+
+void UCGiantBeetleFSM::MultiRPC_ONDamage_Implementation(int32 damage)
+{
+	
 }
 
 void UCGiantBeetleFSM::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

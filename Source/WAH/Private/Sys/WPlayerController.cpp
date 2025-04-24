@@ -2,6 +2,9 @@
 
 
 #include "Sys/WPlayerController.h"
+#include "Player/CCody.h"
+#include "Guns/CGun.h"
+#include "Kismet/GameplayStatics.h"
 
 void AWPlayerController::BeginPlay()
 {
@@ -22,6 +25,12 @@ void AWPlayerController::ServerRPC_ChangePlayer_Implementation(bool IsMay)
 		UnPossess();
 		APawn* newChar = GetWorld()->SpawnActor<APawn>(PlayerFac, oldPawn->GetActorTransform());
 		Possess(newChar);
+		ACCody* cody = Cast<ACCody>(oldPawn);
+		cody->Gun->SetActorHiddenInGame(true);
 		oldPawn->Destroy();
+		TArray<AActor*> OutActors;
+		UGameplayStatics::GetAllActorsWithTag(GetWorld(),TEXT("SSCamera"), OutActors );
+		AActor* cam = OutActors[FMath::RandRange(0, OutActors.Num() - 1)];
+		SetViewTarget(cam);
 	}
 }

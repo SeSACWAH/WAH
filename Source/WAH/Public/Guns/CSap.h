@@ -40,6 +40,12 @@ public:
 
 	float ExplosionRadius = 300;
 
+	UFUNCTION(Server, Unreliable)
+	void ServerRPC_Explosion(FVector lot);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MultiRPC_Explosion(FVector lot);
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	class UNiagaraSystem* ExplosionSys;
 

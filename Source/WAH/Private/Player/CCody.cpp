@@ -20,8 +20,11 @@ ACCody::ACCody()
 void ACCody::BeginPlay()
 {
 	Super::BeginPlay();
-	Gun = GetWorld()->SpawnActor<ACGun>(GunBP);
-	if (Gun) Gun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("GunSocket"));
+	if (HasAuthority())
+	{
+		Gun = GetWorld()->SpawnActor<ACGun>(GunBP);
+		if (Gun) Gun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("GunSocket"));
+	}
 	
 }
 
@@ -35,5 +38,25 @@ void ACCody::ServerRPC_Fire_Implementation()
 	if (Gun)
 	{
 		Gun->FireBullet(FireDest);
+	}
+}
+
+void ACCody::OnDead()
+{
+	Super::OnDead();
+	ServerRPC_SetGun(true);
+}
+
+void ACCody::ServerRPC_SetGun_Implementation(bool bVisible)
+{
+	Gun->SetActorHiddenInGame(bVisible);
+}
+
+void ACCody::OnRevive(float InDeltaTime)
+{
+	Super::OnRevive(InDeltaTime);
+	if (CurrentReviveTime >= RevivalTime)
+	{
+		ServerRPC_SetGun(false);
 	}
 }
