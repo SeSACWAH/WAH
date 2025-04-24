@@ -24,9 +24,12 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class UCapsuleComponent* CapComp;
+	class UBoxComponent* CapComp;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UBoxComponent* AttackBox;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class USkeletalMeshComponent* MeshComp;
+
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = FSMComponent)
 	class UCGiantBeetleFSM* fsm;

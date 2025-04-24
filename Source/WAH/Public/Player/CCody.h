@@ -32,5 +32,11 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void ServerRPC_Fire();
+
+	virtual void OnDead() override;
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_SetGun(bool bVisible);
+
+	virtual void OnRevive(float InDeltaTime) override;
 };
 

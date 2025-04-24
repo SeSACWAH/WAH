@@ -2,45 +2,35 @@
 
 
 #include "Sys/WPlayerController.h"
-#include "../../../../../../../Source/Runtime/UMG/Public/Blueprint/UserWidget.h"
-#include "CWAHGameMode.h"
-#include "../../../../../../../Source/Runtime/Engine/Public/Net/UnrealNetwork.h"
+#include "Player/CCody.h"
+#include "Guns/CGun.h"
+#include "Kismet/GameplayStatics.h"
 
 void AWPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-}
 
-void AWPlayerController::SetChooseUIRef(UUserWidget* InWidget)
-{
-	ChooseUI = InWidget;
-}
-
-void AWPlayerController::ServerRPC_RequestSpawn_Implementation(EPlayerRole InPlayerRole)
-{
-	SelectedRole = InPlayerRole;
-
-	if(ACWAHGameMode* gm = GetWorld()->GetAuthGameMode<ACWAHGameMode>())
-		gm->SpawnPlayerCharacter(this);
-
-		ClientRPC_RemoveChoosePlayerUI();
-}
-
-void AWPlayerController::ClientRPC_RemoveChoosePlayerUI_Implementation()
-{
-	if (ChooseUI)
+	if (!HasAuthority())
 	{
-		ChooseUI->RemoveFromParent();
-		ChooseUI->SetVisibility(ESlateVisibility::Hidden);
-		bShowMouseCursor = false;
-		this->SetInputMode(FInputModeGameOnly());
+		bMay = true;
+		ServerRPC_ChangePlayer(bMay);
 	}
 }
 
-
-void AWPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void AWPlayerController::ServerRPC_ChangePlayer_Implementation(bool IsMay)
 {
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(AWPlayerController, SelectedRole);
+	if (IsMay)
+	{
+		auto oldPawn = GetPawn();
+		UnPossess();
+		APawn* newChar = GetWorld()->SpawnActor<APawn>(PlayerFac, oldPawn->GetActorTransform());
+		Possess(newChar);
+		ACCody* cody = Cast<ACCody>(oldPawn);
+		cody->Gun->SetActorHiddenInGame(true);
+		oldPawn->Destroy();
+		TArray<AActor*> OutActors;
+		UGameplayStatics::GetAllActorsWithTag(GetWorld(),TEXT("SSCamera"), OutActors );
+		AActor* cam = OutActors[FMath::RandRange(0, OutActors.Num() - 1)];
+		SetViewTarget(cam);
+	}
 }

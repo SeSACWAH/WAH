@@ -48,11 +48,22 @@ void ACSap::SetSapGather(float sapGather)
 
 void ACSap::Explosion(FVector lot)
 {
-	ExplosionComp = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ExplosionSys, lot);
+	ServerRPC_Explosion(lot);
+}
+
+void ACSap::ServerRPC_Explosion_Implementation(FVector lot)
+{
+	MultiRPC_Explosion(lot);
+}
+
+void ACSap::MultiRPC_Explosion_Implementation(FVector lot)
+{
+	ExplosionComp = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ExplosionSys, GetActorLocation());
 }
 
 void ACSap::OnSapOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	if(!HasAuthority()) return;
 	// beetle
 	auto beetle = Cast<ACGiantBeetle>(OtherActor);
 	if(beetle)
