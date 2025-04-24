@@ -17,6 +17,7 @@ protected:
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+    virtual void PossessedBy(AController* NewController) override;
 
 #pragma region Player State
 protected:
@@ -247,8 +248,9 @@ protected:
     UPROPERTY(Replicated)
     bool bCanZoom = false;
 
-    //bool bCanAdjustTargetArmLength = false;
-
+public:
+    bool GetCanAim(){ return bCanAim; }
+protected:
     // target에 Aim이 고정되었는지 체크
     bool bIsAimLocked = false;
 

@@ -98,10 +98,6 @@ ACPlayer::ACPlayer()
 void ACPlayer::BeginPlay()
 {
     Super::BeginPlay();
-
-    /*InitCrosshairWidgets();*/
-    // Override
-    //AttachGun();
 }
 
 void ACPlayer::Tick(float DeltaTime)
@@ -165,6 +161,11 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
     }
 }
 
+void ACPlayer::PossessedBy(AController* NewController)
+{
+    Super::PossessedBy(NewController);
+}
+
 void ACPlayer::OnRep_HP(int32 InDamage)
 {
     GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, FString::Printf(TEXT("[DAMAGED] Player Get DAMAGED : %d"), HP));
@@ -202,67 +203,16 @@ void ACPlayer::OnDamaged(int32 InDamage)
 {
     if (bIsGodMode || bIsDead) return;
     ServerRPC_SetHP(InDamage);
-
-    /*bIsDamaged = true;
-    HP -= InDamage;
-    if(HP <= 0)
-    {
-        OnDead();
-        return;
-    }
-
-    auto lambda = [&]() {
-            GetWorld()->GetTimerManager().ClearTimer(DamageTimer);
-            RecoverHP();
-        };
-    GetWorld()->GetTimerManager().SetTimer(DamageTimer, lambda, DamageDurationTime, false);*/
 }
-
-//void ACPlayer::RecoverHP()
-//{
-//    auto lambda = [&](){
-//        if(HP < MaxHP)
-//        {
-//            HP++;
-//        }
-//        else
-//        {
-//            bIsDamaged = false;
-//            GetWorld()->GetTimerManager().ClearTimer(RecoverTimer);
-//        }
-//            };
-//    GetWorld()->GetTimerManager().SetTimer(RecoverTimer, lambda, RecoverTime, true);
-//}
 
 void ACPlayer::OnDead()
 {
     MulticastRPC_Dead();
-    //bIsDead = true;
-
-    //GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, TEXT("[DEAD] Player DEAD!!!!!"));
-    //GetMesh()->SetVisibility(false);
-    ////Gun->GetGunMeshComp()->SetVisibility(false);
-    //SetActorLocation(GetActorLocation() + -GetActorUpVector() * 100);
-
-    //// 죽음 FX의 Visibility를 켠다
-
-    //// 죽음 FX가 끝나면
-    //
-    //// 화면 채도가 살짝 낮아진다
-    //
-    //// 화면이 뿌얘진다
-    //
-    //// 부활 타이머가 시작된다
-    //bIsReviving = true;
-    //GEngine->AddOnScreenDebugMessage(1, 2, FColor::Red, TEXT("[REVIVAL] Player REVIVE Start"));
-
-    //// 부활 UI가 뜬다
 }
 
 void ACPlayer::RevivalInputEntered(const FInputActionValue& InValue)
 {
     ServerRPC_RevivalInputEntered();
-    //if(bIsReviving) bIsRevivalInputEntered = true;
 }
 
 void ACPlayer::ServerRPC_RevivalInputEntered_Implementation()
@@ -277,9 +227,6 @@ void ACPlayer::OnRevive(float InDeltaTime)
         if (bIsRevivalInputEntered)
         {
             ServerRPC_ReviveInputEntered(InDeltaTime);
-            //GEngine->AddOnScreenDebugMessage(2, 0.2, FColor::Green, TEXT("[REVIVAL] E Entered"));
-            //CurrentReviveTime += InDeltaTime * ReviveBoostAmount;
-            //bIsRevivalInputEntered = false;
         }
         else CurrentReviveTime += InDeltaTime;
         DebugReviveTime += InDeltaTime;
@@ -293,9 +240,6 @@ void ACPlayer::OnRevive(float InDeltaTime)
 void ACPlayer::ServerRPC_ReviveInputEntered_Implementation(float InDeltaTime)
 {
     MulticastRPC_ReviveInputEntered(InDeltaTime);
-    //GEngine->AddOnScreenDebugMessage(2, 0.2, FColor::Green, TEXT("[REVIVAL] E Entered"));
-    //CurrentReviveTime += InDeltaTime * ReviveBoostAmount;
-    //bIsRevivalInputEntered = false;
 }
 
 void ACPlayer::MulticastRPC_ReviveInputEntered_Implementation(float InDeltaTime)
@@ -399,7 +343,7 @@ void ACPlayer::DoJump(const FInputActionValue& InValue)
 
 void ACPlayer::DoRun(const FInputActionValue& InValue)
 {
-    if (bIsDead || bIsReviving) return;
+    if (bCanAim || bIsDead || bIsReviving) return;
 
     if (GetCharacterMovement()->MaxWalkSpeed > SpeedJog)
         GetCharacterMovement()->MaxWalkSpeed = SpeedJog;
@@ -508,7 +452,8 @@ void ACPlayer::DoFire()
 void ACPlayer::PrintNetLog()
 {
     const FString ownerName = GetOwner() != nullptr ? GetOwner()->GetName() : TEXT("No Owner");
-    FString myLog = FString::Printf(TEXT("%s HP : %d\nLocation : %s\nRotation : %s"), *ownerName, HP, *GetActorLocation().ToString(), *GetActorRotation().ToString());
+    float speed = GetCharacterMovement()->Velocity.Size();
+    FString myLog = FString::Printf(TEXT("%s Speed : %f"), *ownerName, speed);
 
     DrawDebugString(GetWorld(), GetActorLocation() + FVector::UpVector * 100.0f, myLog, nullptr, FColor::White, 0, true);
 }
