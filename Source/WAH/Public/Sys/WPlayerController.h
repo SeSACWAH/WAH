@@ -1,29 +1,40 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "WPlayerController.generated.h"
 
-/**
- * 
- */
+UENUM(BlueprintType)
+enum class EPlayerRole : uint8
+{
+    Cody, May, MAX
+};
+
 UCLASS()
 class WAH_API AWPlayerController : public APlayerController
 {
 	GENERATED_BODY()
-	
 
 public:
 
 	virtual void BeginPlay() override;
 	
-	UPROPERTY(EditDefaultsOnly, Category=ChooseCharacter)
-	TSubclassOf<class APawn> PlayerFac;
+public:
+	UPROPERTY(BlueprintReadWrite)
+	class UUserWidget* ChooseUI;
 
-	bool bMay = false;
+public:
+	UFUNCTION(BlueprintCallable)
+	void SetChooseUIRef(UUserWidget* InWidget);
 
 	UFUNCTION(Server, Reliable)
-	void ServerRPC_ChangePlayer(bool IsMay);
+	void ServerRPC_RequestSpawn(EPlayerRole InPlayerRole);
+
+	UFUNCTION(Client, Reliable)
+	void ClientRPC_RemoveChoosePlayerUI();
+
+    UPROPERTY(Replicated)
+    EPlayerRole SelectedRole;
+
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 };

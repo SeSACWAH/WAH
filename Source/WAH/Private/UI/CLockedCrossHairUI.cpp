@@ -8,7 +8,9 @@
 
 void UCLockedCrossHairUI::UpdateCrosshairPosition(FVector2D InPosition)
 {
-    UCanvasPanelSlot* canvasSlot = Cast<UCanvasPanelSlot>(CrosshairLocked->Slot);
-    
-    if(canvasSlot) canvasSlot->SetPosition(InPosition);
+    if (CrosshairLocked)
+    {
+        if (UCanvasPanelSlot* canvasSlot = Cast<UCanvasPanelSlot>(CrosshairLocked->Slot))
+            canvasSlot->SetPosition(InPosition);
+    }
 }

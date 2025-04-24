@@ -17,6 +17,7 @@ protected:
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+    virtual void PossessedBy(AController* NewController) override;
 
 #pragma region Player State
 protected:
@@ -38,6 +39,7 @@ protected:
     bool bIsDead = false;
     UPROPERTY(Replicated)
     bool bIsReviving = false;
+    UPROPERTY(Replicated)
     bool bIsRevivalInputEntered = false;
     UPROPERTY(Replicated)
     bool bIsGodMode = false;
@@ -51,6 +53,8 @@ protected:
     float RevivalTime = 7.f;
     UPROPERTY(EditDefaultsOnly, Category = Revival)
     int32 ReviveBoostAmount = 10;
+
+    UPROPERTY(Replicated)
     float CurrentReviveTime = 0;
 
     UPROPERTY(EditDefaultsOnly, Category = Revival)
@@ -63,10 +67,16 @@ protected:
 
     void RecoverHP();
     void RevivalInputEntered(const struct FInputActionValue& InValue);
+    UFUNCTION(Server, Reliable)
+    void ServerRPC_RevivalInputEntered();
     void GodMode(float InDeltaTime);
 
     virtual void OnDead();
     virtual void OnRevive(float InDeltaTime);
+    UFUNCTION(Server, Reliable)
+    void ServerRPC_ReviveInputEntered(float InDeltaTime);
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastRPC_ReviveInputEntered(float InDeltaTime);
 
     UFUNCTION()
     void OnRep_HP(int32 InDamage);
@@ -238,8 +248,9 @@ protected:
     UPROPERTY(Replicated)
     bool bCanZoom = false;
 
-    //bool bCanAdjustTargetArmLength = false;
-
+public:
+    bool GetCanAim(){ return bCanAim; }
+protected:
     // target에 Aim이 고정되었는지 체크
     bool bIsAimLocked = false;
 
@@ -282,36 +293,12 @@ protected:
 #pragma endregion
 
 #pragma region Gun
-    //UPROPERTY(EditAnywhere, Category = Gun)
-    //TSubclassOf<class ACGun> GunBP;
-
-    //UPROPERTY()
-    //class ACGun* Gun;
-
     virtual void AttachGun();
 #pragma endregion
 
 #pragma region Fire
     UPROPERTY(EditDefaultsOnly, Category = Input)
     class UInputAction* IA_Fire;
-
-    //// MAY
-    //int32 MaxBulletCount = 3;
-    //int32 CurrentBulletCount = MaxBulletCount;
-
-    // CODY
-    //float MaxSapAmount = 1;
-    //float CurrentSapAmout = MaxSapAmount;
-
-    //bool bIsInFireDelayTime = false;
-
-    //UPROPERTY(EditDefaultsOnly, Category = Fire)
-    //float FireDelayTime = 1.0f;
-
-    //// MAY
-    //// MUST ChargeAmmoTime < FireDelayTime
-    //UPROPERTY(EditDefaultsOnly, Category = Fire)
-    //float ChargeAmmoTime = 3.5f;
 
     virtual void DoFire();
 #pragma endregion
@@ -323,6 +310,7 @@ protected:
 
 #pragma region TEST
     // TEST
+    UPROPERTY(Replicated)
     float DebugReviveTime = 0;
     UPROPERTY(EditDefaultsOnly, Category = Input)
     class UInputAction* IA_TestDamage;

@@ -24,9 +24,8 @@ ACMay::ACMay()
 void ACMay::BeginPlay()
 {
     Super::BeginPlay();
-    
 
-    if (IsLocallyControlled())
+    if (IsLocallyControlled() && HasAuthority() == false )
     {
         InitCrosshairWidgets();
     }
@@ -46,6 +45,16 @@ void ACMay::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
     Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
+
+void ACMay::PossessedBy(AController* NewController)
+{
+    Super::PossessedBy(NewController);
+
+    if (IsLocallyControlled())
+    {
+        InitCrosshairWidgets();
+    }
+}
 
 void ACMay::AttachGun()
 {
@@ -70,14 +79,14 @@ void ACMay::ServerRPC_GetAimPosition_Implementation()
 
 void ACMay::InitCrosshairWidgets()
 {
-    if (UnlockedCrossshairWidget)
+    if (UnlockedCrossshairWidget && UnlockedCrossshairUI == nullptr)
     {
         UnlockedCrossshairUI = Cast<UCUnlockedCrossHairUI>(CreateWidget(GetWorld(), UnlockedCrossshairWidget));
         UnlockedCrossshairUI->SetVisibility(ESlateVisibility::Hidden);
         UnlockedCrossshairUI->AddToViewport();
     }
 
-    if (LockedCrossshairWidget)
+    if (LockedCrossshairWidget && LockedCrossshairUI == nullptr)
     {
         LockedCrossshairUI = Cast<UCLockedCrossHairUI>(CreateWidget(GetWorld(), LockedCrossshairWidget));
         LockedCrossshairUI->SetVisibility(ESlateVisibility::Hidden);
@@ -103,18 +112,17 @@ void ACMay::StartAim(const FInputActionValue& InValue)
 
     ServerRPC_StartAim();
     //bUseControllerRotationYaw = true;
-    //bCanAim = true;
-    //bCanZoom = true;
+    bCanAim = true;
+    bCanZoom = true;
 
     if (CameraBoom->GetComponentLocation() == CameraBoomLocationDefault) ZoomCurrentTime = 0;
     if (UnlockedCrossshairUI) SetUnlockedCrosshairVisibility(true);
-
 }
 
 void ACMay::ServerRPC_StartAim_Implementation()
 {
-    bCanAim = true;
-    bCanZoom = true;
+    //bCanAim = true;
+    //bCanZoom = true;
     MulticastRPC_StartAim();
 }
 
@@ -216,15 +224,15 @@ void ACMay::CompleteAim(const FInputActionValue& InValue)
 
     ServerRPC_CompleteAim();
     //bUseControllerRotationYaw = false;
-    //bCanAim = false;
-    //bCanZoom = false;
+    bCanAim = false;
+    bCanZoom = false;
 }
 
 void ACMay::ServerRPC_CompleteAim_Implementation()
 {
     MulticastRPC_CompleteAim();
-    bCanAim = false;
-    bCanZoom = false;
+    //bCanAim = false;
+    //bCanZoom = false;
 }
 
 void ACMay::MulticastRPC_CompleteAim_Implementation()

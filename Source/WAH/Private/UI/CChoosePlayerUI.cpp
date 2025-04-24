@@ -5,6 +5,7 @@
 #include "../../../../../../../Source/Runtime/UMG/Public/Components/Button.h"
 #include "Player/CCody.h"
 #include "Player/CMay.h"
+#include "Sys/WPlayerController.h"
 
 void UCChoosePlayerUI::NativeConstruct()
 {
@@ -16,12 +17,12 @@ void UCChoosePlayerUI::NativeConstruct()
 
 void UCChoosePlayerUI::OnButtonCodyClicked()
 {
-    //if(auto pc = GetOwningPlayer<ACCody>())
-    //    pc->ServerRequestSpawn(EplayerRole::Cody);
+    if(auto pc = GetOwningPlayer<AWPlayerController>())
+        pc->ServerRPC_RequestSpawn(EPlayerRole::Cody);
 }
 
 void UCChoosePlayerUI::OnButtonMayClicked()
 {
-    //if (auto pc = GetOwningPlayer<ACMay>())
-    //    pc->ServerRequestSpawn(EplayerRole::May);
+    if (auto pc = GetOwningPlayer<AWPlayerController>())
+        pc->ServerRPC_RequestSpawn(EPlayerRole::May);
 }

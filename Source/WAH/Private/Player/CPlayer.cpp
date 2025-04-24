@@ -98,10 +98,6 @@ ACPlayer::ACPlayer()
 void ACPlayer::BeginPlay()
 {
     Super::BeginPlay();
-
-    /*InitCrosshairWidgets();*/
-    // Override
-    //AttachGun();
 }
 
 void ACPlayer::Tick(float DeltaTime)
@@ -165,6 +161,11 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
     }
 }
 
+void ACPlayer::PossessedBy(AController* NewController)
+{
+    Super::PossessedBy(NewController);
+}
+
 void ACPlayer::OnRep_HP(int32 InDamage)
 {
     GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, FString::Printf(TEXT("[DAMAGED] Player Get DAMAGED : %d"), HP));
@@ -202,66 +203,21 @@ void ACPlayer::OnDamaged(int32 InDamage)
 {
     if (bIsGodMode || bIsDead) return;
     ServerRPC_SetHP(InDamage);
-
-    /*bIsDamaged = true;
-    HP -= InDamage;
-    if(HP <= 0)
-    {
-        OnDead();
-        return;
-    }
-
-    auto lambda = [&]() {
-            GetWorld()->GetTimerManager().ClearTimer(DamageTimer);
-            RecoverHP();
-        };
-    GetWorld()->GetTimerManager().SetTimer(DamageTimer, lambda, DamageDurationTime, false);*/
 }
-
-//void ACPlayer::RecoverHP()
-//{
-//    auto lambda = [&](){
-//        if(HP < MaxHP)
-//        {
-//            HP++;
-//        }
-//        else
-//        {
-//            bIsDamaged = false;
-//            GetWorld()->GetTimerManager().ClearTimer(RecoverTimer);
-//        }
-//            };
-//    GetWorld()->GetTimerManager().SetTimer(RecoverTimer, lambda, RecoverTime, true);
-//}
 
 void ACPlayer::OnDead()
 {
     MulticastRPC_Dead();
-    //bIsDead = true;
-
-    //GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, TEXT("[DEAD] Player DEAD!!!!!"));
-    //GetMesh()->SetVisibility(false);
-    ////Gun->GetGunMeshComp()->SetVisibility(false);
-    //SetActorLocation(GetActorLocation() + -GetActorUpVector() * 100);
-
-    //// 죽음 FX의 Visibility를 켠다
-
-    //// 죽음 FX가 끝나면
-    //
-    //// 화면 채도가 살짝 낮아진다
-    //
-    //// 화면이 뿌얘진다
-    //
-    //// 부활 타이머가 시작된다
-    //bIsReviving = true;
-    //GEngine->AddOnScreenDebugMessage(1, 2, FColor::Red, TEXT("[REVIVAL] Player REVIVE Start"));
-
-    //// 부활 UI가 뜬다
 }
 
 void ACPlayer::RevivalInputEntered(const FInputActionValue& InValue)
 {
-    if(bIsReviving) bIsRevivalInputEntered = true;
+    ServerRPC_RevivalInputEntered();
+}
+
+void ACPlayer::ServerRPC_RevivalInputEntered_Implementation()
+{
+    if (bIsReviving) bIsRevivalInputEntered = true;
 }
 
 void ACPlayer::OnRevive(float InDeltaTime)
@@ -270,30 +226,27 @@ void ACPlayer::OnRevive(float InDeltaTime)
     {
         if (bIsRevivalInputEntered)
         {
-            CurrentReviveTime += InDeltaTime * ReviveBoostAmount;
-            bIsRevivalInputEntered = false;
+            ServerRPC_ReviveInputEntered(InDeltaTime);
         }
         else CurrentReviveTime += InDeltaTime;
+        DebugReviveTime += InDeltaTime;
     }
     else
     {
         MulticastRPC_Revive();
-        //GetMesh()->SetVisibility(true);
-        ////Gun->GetGunMeshComp()->SetVisibility(true);
-        //
-        ////등장 FX Visible 켜기
-        //
-        //SetActorLocation(FVector(0));
-        //SetActorRotation(FRotator(0, 180, 0));
-
-        //bIsReviving = false;
-        //bIsDead = false;
-        //bIsDamaged = false;
-        //HP = MaxHP;
-
-        //CurrentReviveTime = 0;
-        //bIsGodMode = true;
     }
+}
+
+void ACPlayer::ServerRPC_ReviveInputEntered_Implementation(float InDeltaTime)
+{
+    MulticastRPC_ReviveInputEntered(InDeltaTime);
+}
+
+void ACPlayer::MulticastRPC_ReviveInputEntered_Implementation(float InDeltaTime)
+{
+    GEngine->AddOnScreenDebugMessage(2, 0.2, FColor::Green, TEXT("[REVIVAL] E Entered"));
+    CurrentReviveTime += InDeltaTime * ReviveBoostAmount;
+    bIsRevivalInputEntered = false;
 }
 
 void ACPlayer::ServerRPC_SetHP_Implementation(float InDamage)
@@ -328,7 +281,7 @@ void ACPlayer::MulticastRPC_Dead_Implementation()
 
 void ACPlayer::MulticastRPC_Revive_Implementation()
 {
-    GEngine->AddOnScreenDebugMessage(1, 2, FColor::Red, TEXT("[REVIVAL] Player REVIVE Complete"));
+    GEngine->AddOnScreenDebugMessage(1, 2, FColor::Red, FString::Printf(TEXT("[REVIVAL] Player REVIVE Complete - %f / %f"), DebugReviveTime, RevivalTime));
 
     GetMesh()->SetVisibility(true);
 
@@ -342,6 +295,7 @@ void ACPlayer::MulticastRPC_Revive_Implementation()
     HP = MaxHP;
 
     CurrentReviveTime = 0;
+    DebugReviveTime = 0;
     bIsGodMode = true;
 }
 
@@ -389,7 +343,7 @@ void ACPlayer::DoJump(const FInputActionValue& InValue)
 
 void ACPlayer::DoRun(const FInputActionValue& InValue)
 {
-    if (bIsDead || bIsReviving) return;
+    if (bCanAim || bIsDead || bIsReviving) return;
 
     if (GetCharacterMovement()->MaxWalkSpeed > SpeedJog)
         GetCharacterMovement()->MaxWalkSpeed = SpeedJog;
@@ -403,10 +357,6 @@ void ACPlayer::StartDash(const FInputActionValue& InValue)
     if (bCanDash || bCanResetDash) return;
 
     ServerRPC_StartDash();
-    //DashStartPos = GetActorLocation();
-    //DashEndPos = GetActorLocation() + GetActorForwardVector() * DashDistance;
-
-    //bCanDash = true;
 }
 
 void ACPlayer::ServerRPC_StartDash_Implementation()
@@ -446,31 +396,14 @@ void ACPlayer::ResetDash(float InDeltaTime)
 
 void ACPlayer::InitCrosshairWidgets()
 {
-    //if (UnlockedCrossshairWidget)
-    //{
-    //    UnlockedCrossshairUI = Cast<UCUnlockedCrossHairUI>(CreateWidget(GetWorld(), UnlockedCrossshairWidget));
-    //    UnlockedCrossshairUI->SetVisibility(ESlateVisibility::Hidden);
-    //    UnlockedCrossshairUI->AddToViewport();
-    //}
-
-    //if (LockedCrossshairWidget)
-    //{
-    //    LockedCrossshairUI = Cast<UCLockedCrossHairUI>(CreateWidget(GetWorld(), LockedCrossshairWidget));
-    //    LockedCrossshairUI->SetVisibility(ESlateVisibility::Hidden);
-    //    LockedCrossshairUI->AddToViewport();
-    //}
 }
 
 void ACPlayer::SetUnlockedCrosshairVisibility(bool bVisible)
 {
-    //if (UnlockedCrossshairUI)
-    //    UnlockedCrossshairUI->SetVisibility( bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden );
 }
 
 void ACPlayer::SetLockedCrosshairVisibility(bool bVisible)
 {
-    //if (LockedCrossshairUI)
-    //    LockedCrossshairUI->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 }
 
 float ACPlayer::EaseInOutQuad(float InRatio)
@@ -492,153 +425,35 @@ float ACPlayer::EaseOutSine(float InRatio)
 
 void ACPlayer::StartAim(const FInputActionValue& InValue)
 {
-    //if (bIsDead || bIsDamaged || bIsReviving) return;
-
-    //bCanAim = true;
-
-    //if (CameraBoom->GetComponentLocation() == CameraBoomLocationDefault) ZoomCurrentTime = 0;
-
-    //if (UnlockedCrossshairUI) SetUnlockedCrosshairVisibility(true);
-
-    //bUseControllerRotationYaw = true;
-    //bCanZoom = true;
 }
 
 void ACPlayer::AdjustTargetArmLocation(float InDeltaTime)
 {
-    ////UE_LOG(LogTemp, Warning, TEXT(">>> Start Adjust Target Arm Location <<<"));
-    //float ratio;
-
-    //if (bCanZoom) ZoomCurrentTime += InDeltaTime;
-    //else ZoomCurrentTime -= InDeltaTime;
-
-    //// CurTime이 범위를 벗어나는 것을 한정해줌
-    //ZoomCurrentTime = FMath::Clamp(ZoomCurrentTime, 0, AimZoomMaxTime);
-
-    //ratio = EaseInOutQuad(ZoomCurrentTime / AimZoomMaxTime);
-    //CameraBoom->SetRelativeLocation(FMath::Lerp(CameraBoomLocationDefault, CameraBoomLocationZoomIn, ratio));
 }
 
 void ACPlayer::TriggerAim(const FInputActionValue& InValue)
 {
-    //if (bIsDead || bIsDamaged || bIsReviving) return;
-
-    //FVector startPos = Gun->GetFirePosition();
-    //FVector endPos = startPos + PlayerCamear->GetForwardVector() * SphereTraceDistance;
-
-    //FHitResult hitResult;
-    //TArray<AActor*> actorsToIgnore;
-    //actorsToIgnore.Add(this);
-
-    //bool bHit = UKismetSystemLibrary::SphereTraceSingle(this, startPos, endPos, SphereTraceRadius, UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_GameTraceChannel6), false, actorsToIgnore, EDrawDebugTrace::ForDuration, hitResult, true, FColor::Purple, FColor::Orange, 0.3f);
-    //
-    //if (bHit)
-    //{
-    //    FireDestination = hitResult.Location;
-
-    //    bool bHitBySap = hitResult.GetComponent()->ComponentHasTag(FName("Sap"));
-
-    //    //UE_LOG(LogTemp, Warning, TEXT("[HIT] bHitBySap : %d / bHitBySapCenter : %d"), bHitBySap, bHitBySapCenter);
-
-    //    // Sap이 들어있는 통에 닿았다면
-    //    if (bHitBySap)
-    //    {
-    //        SetUnlockedCrosshairVisibility(false);
-    //        SetLockedCrosshairVisibility(true);
-
-    //        FVector sapCenterLocation;
-    //        USphereComponent* sapFull = Cast<USphereComponent>(hitResult.GetComponent());
-    //        if (sapFull)
-    //        {
-    //            sapCenterLocation = sapFull->GetComponentLocation() + sapFull->GetUpVector() * sapFull->GetScaledSphereRadius();
-    //            FireDestination = sapCenterLocation;
-    //            // Sap Center의 스크린 좌표 위치를 구한다
-    //            FVector2D screenPos;
-    //            APlayerController* pc = Cast<APlayerController>(GetController());
-    //            // 마지막 true : DPI Scaling을 무시하겠다
-    //            bool bProjected = UWidgetLayoutLibrary::ProjectWorldLocationToWidgetPosition(pc, sapCenterLocation, screenPos, false);
-
-    //            if (bProjected)
-    //            {
-    //                // LockedCrossHair의 위치를 FireDestination의 스크린 좌표 위치로 갱신해준다
-    //                LockedCrossshairUI->UpdateCrosshairPosition(screenPos);
-    //            }
-    //        }
-
-    //    }
-    //    else
-    //    {
-    //        SetLockedCrosshairVisibility(false);
-    //        SetUnlockedCrosshairVisibility(true);
-    //    }
-    //}
-    //else
-    //{
-    //    FireDestination = endPos;
-    //    SetLockedCrosshairVisibility(false);
-    //    SetUnlockedCrosshairVisibility(true);
-    //}
 }
 
 
 void ACPlayer::CompleteAim(const FInputActionValue& InValue)
 {
-    //SetUnlockedCrosshairVisibility(false);
-    //SetLockedCrosshairVisibility(false);
-
-    //bUseControllerRotationYaw = false;
-    //bCanZoom = false;
-    //bCanAim = false;
 }
 
 
 void ACPlayer::AttachGun()
 {
-    //if (GunBP)
-    //{
-    //    Gun = GetWorld()->SpawnActor<ACGun>(GunBP);
-    //    if(Gun) Gun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("GunSocket"));
-    //    //UE_LOG(LogTemp, Error, TEXT(">>> Attach Gun Success"));
-    //}
 }
 
 void ACPlayer::DoFire()
 {
-    //if (bIsDead || bIsReviving) return;
-
-    //// Aim 모드가 아니거나, 총알이 전부 소진되었거나, Fire 중이라면
-    //// MAY
-    //if(!bCanAim || CurrentBulletCount == 0 || bIsInFireDelayTime) return;
-    ////// CODY
-    ////if (!bCanAim || CurrentSapAmout <= 0 || bIsInFireDelayTime) return;
-
-    //UE_LOG(LogTemp, Error, TEXT(">>>>> Fire Input Entered <<<<<"));
-    //// MAY
-    //CurrentBulletCount--;
-    //Gun->FireBullet(FireDestination);
-    //bIsInFireDelayTime = true;
-    //UE_LOG(LogTemp, Error, TEXT(">>> Current Bullet : %d"), CurrentBulletCount);
-
-    //// Fire Delay Time 동안에는 Fire 불가
-    //FTimerHandle fireDelayTimer;
-    //auto fireDelayLambda = [&]() { bIsInFireDelayTime = false; };
-    //GetWorld()->GetTimerManager().SetTimer(fireDelayTimer, fireDelayLambda, FireDelayTime, false);
-
-    //// MAY
-    //// 일정 시간이 지나면 Ammo 자동 충전
-    //FTimerHandle chargeAmmoTimer;
-    //auto chargeAmmoLambda = [&]() {
-    //        if(CurrentBulletCount >= MaxBulletCount) return;
-    //        CurrentBulletCount++;
-    //        UE_LOG(LogTemp, Error, TEXT(">>> Current Bullet : %d"), CurrentBulletCount);
-    //    };
-    //GetWorld()->GetTimerManager().SetTimer(chargeAmmoTimer, chargeAmmoLambda, ChargeAmmoTime, false);
 }
 
 void ACPlayer::PrintNetLog()
 {
     const FString ownerName = GetOwner() != nullptr ? GetOwner()->GetName() : TEXT("No Owner");
-    FString myLog = FString::Printf(TEXT("%s HP : %d\nLocation : %s\nRotation : %s"), *ownerName, HP, *GetActorLocation().ToString(), *GetActorRotation().ToString());
+    float speed = GetCharacterMovement()->Velocity.Size();
+    FString myLog = FString::Printf(TEXT("%s Speed : %f"), *ownerName, speed);
 
     DrawDebugString(GetWorld(), GetActorLocation() + FVector::UpVector * 100.0f, myLog, nullptr, FColor::White, 0, true);
 }
@@ -659,6 +474,10 @@ void ACPlayer::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
     DOREPLIFETIME(ACPlayer, bIsDead);
     DOREPLIFETIME(ACPlayer, bIsReviving);
     DOREPLIFETIME(ACPlayer, bIsGodMode);
+
+    DOREPLIFETIME(ACPlayer, bIsRevivalInputEntered);
+    DOREPLIFETIME(ACPlayer, CurrentReviveTime);
+    DOREPLIFETIME(ACPlayer, DebugReviveTime);
 }
 
 #pragma region TEST
