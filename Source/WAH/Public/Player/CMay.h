@@ -38,6 +38,16 @@ protected:
     void ServerRPC_DoFire();
 #pragma endregion
 
+#pragma region Dash
+    virtual void StartDash(const FInputActionValue& InValue) override;
+
+    UFUNCTION(Server, Reliable)
+    void ServerRPC_MayPlayDashAnim();
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastRPC_MayPlayDashAnim();
+
+#pragma endregion
+
 #pragma region Gun
     UPROPERTY(EditAnywhere, Category = Gun)
     TSubclassOf<class ACMatchGun> MatchBP;

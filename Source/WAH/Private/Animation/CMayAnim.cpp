@@ -27,3 +27,13 @@ void UCMayAnim::NativeUpdateAnimation(float InDeltaSeconds)
         JumpCurrentCount = May->JumpCurrentCount;
     }
 }
+
+void UCMayAnim::PlayDashAnimation()
+{
+    UE_LOG(LogTemp, Warning, TEXT("MAY DASH>>> Play Montage Entered"));
+    if (DashMontage)
+    {
+        Montage_Play(DashMontage);
+        UE_LOG(LogTemp, Warning, TEXT("MAY DASH>>> Play Montage Completed"));
+    }
+}

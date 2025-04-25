@@ -37,4 +37,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AnimSettings)
 	bool bCanAim = false;
+
+	UPROPERTY(EditAnywhere, Category = Dash)
+	class UAnimMontage* DashMontage;
+
+	void PlayDashAnimation();
 };

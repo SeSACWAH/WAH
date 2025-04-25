@@ -9,6 +9,7 @@
 #include "UI/CUnlockedCrossHairUI.h"
 #include "../../../../../../../Source/Runtime/Engine/Classes/GameFramework/SpringArmComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "Animation/CMayAnim.h"
 
 ACMay::ACMay()
 {
@@ -306,6 +307,27 @@ void ACMay::ServerRPC_DoFire_Implementation()
         // UE_LOG(LogTemp, Error, TEXT(">>> Current Bullet : %d"), CurrentBulletCount);
         };
     GetWorld()->GetTimerManager().SetTimer(chargeAmmoTimer, chargeAmmoLambda, ChargeAmmoTime, false);
+}
+
+void ACMay::StartDash(const FInputActionValue& InValue)
+{
+    Super::StartDash(InValue);
+
+    UE_LOG(LogTemp, Warning, TEXT("MAY DASH>>> Client / bCanDash : %d"), bCanDash);
+    ServerRPC_MayPlayDashAnim();
+}
+
+void ACMay::ServerRPC_MayPlayDashAnim_Implementation()
+{
+    UE_LOG(LogTemp, Warning, TEXT("MAY DASH>>> Server / bCanDash : %d"), bCanDash);
+    MulticastRPC_MayPlayDashAnim();
+}
+
+void ACMay::MulticastRPC_MayPlayDashAnim_Implementation()
+{
+    UE_LOG(LogTemp, Warning, TEXT("MAY DASH>>> Multicast / bCanDash : %d"), bCanDash);
+    auto anim = Cast<UCMayAnim>(GetMesh()->GetAnimInstance());
+    anim->PlayDashAnimation();
 }
 
 void ACMay::OnRevive(float InDeltaTime)
