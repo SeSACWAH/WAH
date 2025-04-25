@@ -311,6 +311,27 @@ void ACMay::ServerRPC_DoFire_Implementation()
     GetWorld()->GetTimerManager().SetTimer(chargeAmmoTimer, chargeAmmoLambda, ChargeAmmoTime, false);
 }
 
+void ACMay::StartDash(const FInputActionValue& InValue)
+{
+    Super::StartDash(InValue);
+
+    UE_LOG(LogTemp, Warning, TEXT("MAY DASH>>> Client / bCanDash : %d"), bCanDash);
+    ServerRPC_MayPlayDashAnim();
+}
+
+void ACMay::ServerRPC_MayPlayDashAnim_Implementation()
+{
+    UE_LOG(LogTemp, Warning, TEXT("MAY DASH>>> Server / bCanDash : %d"), bCanDash);
+    MulticastRPC_MayPlayDashAnim();
+}
+
+void ACMay::MulticastRPC_MayPlayDashAnim_Implementation()
+{
+    UE_LOG(LogTemp, Warning, TEXT("MAY DASH>>> Multicast / bCanDash : %d"), bCanDash);
+    auto anim = Cast<UCMayAnim>(GetMesh()->GetAnimInstance());
+    anim->PlayDashAnimation();
+}
+
 void ACMay::OnRevive(float InDeltaTime)
 {
     Super::OnRevive(InDeltaTime);

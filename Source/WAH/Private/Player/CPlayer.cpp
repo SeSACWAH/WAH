@@ -17,6 +17,7 @@
 #include "EngineUtils.h"
 #include "Net/UnrealNetwork.h"
 #include "Engine/Engine.h"
+#include "../../../../../../../Source/Runtime/Engine/Classes/Components/SceneCaptureComponent2D.h"
 
 ACPlayer::ACPlayer()
 {
@@ -50,6 +51,9 @@ ACPlayer::ACPlayer()
     PlayerCamear->SetupAttachment(CameraBoom/*, USpringArmComponent::SocketName*/);
     PlayerCamear->SetRelativeRotation( FRotator(-10, 0, 0) );
     PlayerCamear->bUsePawnControlRotation = false;
+
+    SceneCapture2D = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCapture2D"));
+    SceneCapture2D->SetupAttachment(CameraBoom);
 
     /* Collision */
     GetCapsuleComponent()->SetCollisionProfileName(FName("Player"));
@@ -364,7 +368,12 @@ void ACPlayer::ServerRPC_StartDash_Implementation()
     DashStartPos = GetActorLocation();
     DashEndPos = GetActorLocation() + GetActorForwardVector() * DashDistance;
 
-    bCanDash = true;
+    MulticastRPC_UpdateCanDash(true);
+}
+
+void ACPlayer::MulticastRPC_UpdateCanDash_Implementation(bool InResult)
+{
+    bCanDash = InResult;
 }
 
 void ACPlayer::DoDash(float InDeltaTime)
@@ -377,7 +386,7 @@ void ACPlayer::DoDash(float InDeltaTime)
     if (DashCurrentTime >= DashDurationTime)
     {
         SetActorLocation(DashEndPos);
-        bCanDash = false;
+        MulticastRPC_UpdateCanDash(false);
         DashCurrentTime = 0;
         bCanResetDash = true;
     }

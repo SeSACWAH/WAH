@@ -109,13 +109,15 @@ protected:
 #pragma endregion
 
 #pragma region Camera
-protected:
-    UPROPERTY(VisibleAnywhere, Category = Camera)
-    class UCameraComponent* PlayerCamear;
-
-    UPROPERTY(VisibleAnywhere, Category = Camera)
+public:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite ,Category = Camera)
     class USpringArmComponent* CameraBoom;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = Camera)
+    class UCameraComponent* PlayerCamear;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
+    class USceneCaptureComponent2D* SceneCapture2D;
 
+protected:
     UPROPERTY(EditDefaultsOnly, Category = Camera)
     float ArmLengthDefault = 400.f;
 
@@ -181,10 +183,6 @@ protected:
     UPROPERTY(Replicated)
     bool bCanDash = false;
 
-public:
-    bool GetCanDash(){ return bCanDash; }
-
-protected:
     UPROPERTY(Replicated)
     bool bCanResetDash = false;
 
@@ -204,9 +202,17 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = Dash)
     float DashCoolDownTime = 0.7f;
 
-    void StartDash(const FInputActionValue& InValue);
+    ////// 추가
+public:
+    bool GetCanDash() { return bCanDash; }
+protected:
+    virtual void StartDash(const FInputActionValue& InValue);
+    ////// 추가 끝
+
     UFUNCTION(Server, Reliable)
     void ServerRPC_StartDash();
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastRPC_UpdateCanDash(bool InResult);
     void DoDash(float InDeltaTime);
     void ResetDash(float InDeltaTime);
 #pragma endregion

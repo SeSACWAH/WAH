@@ -25,12 +25,15 @@ void UCMayAnim::NativeUpdateAnimation(float InDeltaSeconds)
         bIsFalling = May->GetCharacterMovement()->IsFalling();
         bWasJumping = May->bWasJumping;
         JumpCurrentCount = May->JumpCurrentCount;
-        bCanDash = May->GetCanDash();
     }
 }
 
-void UCMayAnim::PlayDashMontage()
+void UCMayAnim::PlayDashAnimation()
 {
-    UE_LOG(LogTemp, Warning, TEXT("MONTAGE - Dash Anim"));
-    if(bCanDash && DashMontage) Montage_Play(DashMontage);
+    UE_LOG(LogTemp, Warning, TEXT("MAY DASH>>> Play Montage Entered"));
+    if (DashMontage)
+    {
+        Montage_Play(DashMontage);
+        UE_LOG(LogTemp, Warning, TEXT("MAY DASH>>> Play Montage Completed"));
+    }
 }
