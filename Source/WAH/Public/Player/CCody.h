@@ -43,8 +43,12 @@ public:
 	UPROPERTY(ReplicatedUsing=OnRep_CameraBoomRotation)
     FRotator CameraBoomRotation;
 
+	UPROPERTY(ReplicatedUsing = OnRep_CameraBoomTransform)
+	FTransform CameraBoomTransform;
+
     UFUNCTION()
     void OnRep_CameraBoomRotation();
+
 
     UFUNCTION(NetMulticast, Unreliable)
     void MulticastRPC_UpdateCaptureRotation(FRotator rot);

@@ -41,9 +41,10 @@ void ACCody::Tick(float DeltaTime)
 		auto pc = Cast<APlayerController>(GetWorld()->GetFirstPlayerController());
 		if (pc)
 		{
-			CameraBoomRotation = pc->GetControlRotation();
+			//CameraBoomRotation = pc->GetControlRotation();
 		}
-		MulticastRPC_UpdateCaptureRotation(CameraBoomRotation);
+		
+		//MulticastRPC_UpdateCaptureRotation(CameraBoomRotation);
 	}
 }
 
@@ -83,18 +84,18 @@ void ACCody::OnRevive(float InDeltaTime)
 
 void ACCody::OnRep_CameraBoomRotation()
 {
-	if (CameraBoom)
-	{
-		CameraBoom->SetRelativeRotation(CameraBoomRotation);
-	}
+	//if (SceneCapture2D)
+	//{
+	//	SceneCapture2D->SetRelativeRotation(CameraBoomRotation);
+	//}
 }
 
 void ACCody::MulticastRPC_UpdateCaptureRotation_Implementation(FRotator rot)
 {
-	if (SceneCapture2D)
-	{
-		SceneCapture2D->SetRelativeRotation(rot);
-	}
+	//if (CameraBoom)
+	//{
+	//	CameraBoom->SetRelativeRotation(rot);
+	//}
 }
 
 void ACCody::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
