@@ -9,6 +9,7 @@
 #include "UI/CUnlockedCrossHairUI.h"
 #include "../../../../../../../Source/Runtime/Engine/Classes/GameFramework/SpringArmComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "Animation/CMayAnim.h"
 
 ACMay::ACMay()
 {
@@ -55,6 +56,8 @@ void ACMay::PossessedBy(AController* NewController)
         InitCrosshairWidgets();
     }
 }
+
+
 
 void ACMay::AttachGun()
 {

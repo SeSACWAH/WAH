@@ -25,5 +25,12 @@ void UCMayAnim::NativeUpdateAnimation(float InDeltaSeconds)
         bIsFalling = May->GetCharacterMovement()->IsFalling();
         bWasJumping = May->bWasJumping;
         JumpCurrentCount = May->JumpCurrentCount;
+        bCanDash = May->GetCanDash();
     }
+}
+
+void UCMayAnim::PlayDashMontage()
+{
+    UE_LOG(LogTemp, Warning, TEXT("MONTAGE - Dash Anim"));
+    if(bCanDash && DashMontage) Montage_Play(DashMontage);
 }

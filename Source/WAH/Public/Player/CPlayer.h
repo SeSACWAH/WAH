@@ -180,6 +180,11 @@ protected:
 
     UPROPERTY(Replicated)
     bool bCanDash = false;
+
+public:
+    bool GetCanDash(){ return bCanDash; }
+
+protected:
     UPROPERTY(Replicated)
     bool bCanResetDash = false;
 
