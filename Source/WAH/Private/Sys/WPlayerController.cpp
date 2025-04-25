@@ -5,10 +5,12 @@
 #include "../../../../../../../Source/Runtime/UMG/Public/Blueprint/UserWidget.h"
 #include "CWAHGameMode.h"
 #include "../../../../../../../Source/Runtime/Engine/Public/Net/UnrealNetwork.h"
+#include "Kismet/GameplayStatics.h"
 
 void AWPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+
 }
 
 void AWPlayerController::SetChooseUIRef(UUserWidget* InWidget)
@@ -20,10 +22,10 @@ void AWPlayerController::ServerRPC_RequestSpawn_Implementation(EPlayerRole InPla
 {
 	SelectedRole = InPlayerRole;
 
-	if(ACWAHGameMode* gm = GetWorld()->GetAuthGameMode<ACWAHGameMode>())
+	if (ACWAHGameMode* gm = GetWorld()->GetAuthGameMode<ACWAHGameMode>())
 		gm->SpawnPlayerCharacter(this);
 
-		ClientRPC_RemoveChoosePlayerUI();
+	ClientRPC_RemoveChoosePlayerUI();
 }
 
 void AWPlayerController::ClientRPC_RemoveChoosePlayerUI_Implementation()

@@ -19,6 +19,7 @@ public:
 	ACCody();
 
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
 
 	FVector FireDest = FVector::ZeroVector;
 
@@ -32,5 +33,23 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void ServerRPC_Fire();
+
+	virtual void OnDead() override;
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_SetGun(bool bVisible);
+
+	virtual void OnRevive(float InDeltaTime) override;
+
+	UPROPERTY(ReplicatedUsing=OnRep_CameraBoomRotation)
+    FRotator CameraBoomRotation;
+
+    UFUNCTION()
+    void OnRep_CameraBoomRotation();
+
+
+    UFUNCTION(NetMulticast, Unreliable)
+    void MulticastRPC_UpdateCaptureRotation(FRotator rot);
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 };
 

@@ -139,6 +139,12 @@ public:
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void MultiRPC_Stomp();
+	
+	UFUNCTION(Server, Unreliable)
+	void ServerRPC_OnDamage(int32 damage);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MultiRPC_ONDamage( int32 damage);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

@@ -53,13 +53,13 @@ void ACSapDrum::ServerRPC_Explosion_Implementation()
 	FCollisionQueryParams params;
 	params.AddIgnoredActor(this);
 
-	bool bHit = GetWorld()->SweepSingleByProfile(HitInfos, CurPos, CurPos, FQuat::Identity, TEXT(""), FCollisionShape::MakeSphere(ExplosionRadius), params);
-
+	bool bHit = GetWorld()->SweepSingleByChannel(HitInfos, CurPos, CurPos, FQuat::Identity, ECollisionChannel::ECC_GameTraceChannel8, FCollisionShape::MakeSphere(ExplosionRadius), params);
+	
 	MultiRPC_Explosion(bHit);
 
 	if (bHit)
 	{
-		auto enemy = HitInfos.GetActor()->GetDefaultSubobjectByName(TEXT("fsm"));
+		auto enemy = HitInfos.GetActor()->GetDefaultSubobjectByName(TEXT("FSM"));
 		if (enemy)
 		{
 			auto enemyFSM = Cast<UCGiantBeetleFSM>(enemy);
@@ -71,6 +71,7 @@ void ACSapDrum::ServerRPC_Explosion_Implementation()
 void ACSapDrum::MultiRPC_Explosion_Implementation(bool bHit)
 {
 	ExplosionComp = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ExplosionSys, GetActorLocation());
+	DrawDebugSphere(GetWorld(), GetActorLocation(), ExplosionRadius, 16, FColor::Red, true);
 }
 
 void ACSapDrum::OnSapDrumOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)

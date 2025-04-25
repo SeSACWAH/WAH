@@ -6,6 +6,11 @@
 #include "Guns/CSapGun.h"
 #include "Engine/GameViewportClient.h"
 #include "GameMapsSettings.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Components/SceneCaptureComponent2D.h"
+#include "EngineUtils.h"
+#include "Net/UnrealNetwork.h"
+#include "Kismet/GameplayStatics.h"
 
 ACCody::ACCody()
 {
@@ -20,9 +25,27 @@ ACCody::ACCody()
 void ACCody::BeginPlay()
 {
 	Super::BeginPlay();
-	Gun = GetWorld()->SpawnActor<ACGun>(GunBP);
-	if (Gun) Gun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("GunSocket"));
+	if (HasAuthority())
+	{
+		Gun = GetWorld()->SpawnActor<ACGun>(GunBP);
+		if (Gun) Gun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("GunSocket"));
+	}
+}
+
+void ACCody::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
 	
+	if (HasAuthority())
+	{
+		auto pc = Cast<APlayerController>(GetWorld()->GetFirstPlayerController());
+		if (pc)
+		{
+			//CameraBoomRotation = pc->GetControlRotation();
+		}
+		
+		//MulticastRPC_UpdateCaptureRotation(CameraBoomRotation);
+	}
 }
 
 void ACCody::DoFire()
@@ -36,4 +59,47 @@ void ACCody::ServerRPC_Fire_Implementation()
 	{
 		Gun->FireBullet(FireDest);
 	}
+}
+
+void ACCody::OnDead()
+{
+	Super::OnDead();
+	ServerRPC_SetGun(true);
+}
+
+void ACCody::ServerRPC_SetGun_Implementation(bool bVisible)
+{
+	Gun->SetActorHiddenInGame(bVisible);
+}
+
+void ACCody::OnRevive(float InDeltaTime)
+{
+	Super::OnRevive(InDeltaTime);
+	if (CurrentReviveTime >= RevivalTime)
+	{
+		ServerRPC_SetGun(false);
+	}
+}
+
+
+void ACCody::OnRep_CameraBoomRotation()
+{
+	//if (SceneCapture2D)
+	//{
+	//	SceneCapture2D->SetRelativeRotation(CameraBoomRotation);
+	//}
+}
+
+void ACCody::MulticastRPC_UpdateCaptureRotation_Implementation(FRotator rot)
+{
+	//if (CameraBoom)
+	//{
+	//	CameraBoom->SetRelativeRotation(rot);
+	//}
+}
+
+void ACCody::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ACCody, CameraBoomRotation);
 }

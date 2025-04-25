@@ -18,7 +18,7 @@ ACGiantBeetle::ACGiantBeetle()
 	fsm = CreateDefaultSubobject<UCGiantBeetleFSM>(TEXT("FSM"));
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
-	CapComp = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleComp"));
+	CapComp = CreateDefaultSubobject<UBoxComponent>(TEXT("CapsuleComp"));
 	SetRootComponent(CapComp);
 
 	AttackBox = CreateDefaultSubobject<UBoxComponent>(TEXT("AttackBox"));
@@ -27,6 +27,9 @@ ACGiantBeetle::ACGiantBeetle()
 	AttackBox->SetCollisionProfileName(TEXT("AttackBox"));
 	AttackBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	AttackBox->OnComponentBeginOverlap.AddDynamic(this, &ACGiantBeetle::OnAttackBoxOverlap);
+
+	MeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshComp"));
+	MeshComp->SetupAttachment(CapComp);
 
 	bReplicates = true;
 }
