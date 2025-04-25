@@ -17,6 +17,8 @@
 #include "EngineUtils.h"
 #include "Net/UnrealNetwork.h"
 #include "Engine/Engine.h"
+#include "Components/SceneCaptureComponent2D.h"
+#include "Sys/WPlayerController.h"
 
 ACPlayer::ACPlayer()
 {
@@ -50,6 +52,9 @@ ACPlayer::ACPlayer()
     PlayerCamear->SetupAttachment(CameraBoom/*, USpringArmComponent::SocketName*/);
     PlayerCamear->SetRelativeRotation( FRotator(-10, 0, 0) );
     PlayerCamear->bUsePawnControlRotation = false;
+
+    SceneCapture2D = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCapture2D"));
+    SceneCapture2D->SetupAttachment(CameraBoom);
 
     /* Collision */
     GetCapsuleComponent()->SetCollisionProfileName(FName("Player"));

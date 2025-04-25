@@ -109,13 +109,15 @@ protected:
 #pragma endregion
 
 #pragma region Camera
-protected:
-    UPROPERTY(VisibleAnywhere, Category = Camera)
-    class UCameraComponent* PlayerCamear;
-
-    UPROPERTY(VisibleAnywhere, Category = Camera)
+public:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite ,Category = Camera)
     class USpringArmComponent* CameraBoom;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = Camera)
+    class UCameraComponent* PlayerCamear;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
+    class USceneCaptureComponent2D* SceneCapture2D;
 
+protected:
     UPROPERTY(EditDefaultsOnly, Category = Camera)
     float ArmLengthDefault = 400.f;
 
