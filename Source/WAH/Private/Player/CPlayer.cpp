@@ -173,7 +173,7 @@ void ACPlayer::PossessedBy(AController* NewController)
 void ACPlayer::OnRep_HP(int32 InDamage)
 {
     GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, FString::Printf(TEXT("[DAMAGED] Player Get DAMAGED : %d"), HP));
-
+    
     bIsDamaged = true;
     if (HP <= 0)
     {

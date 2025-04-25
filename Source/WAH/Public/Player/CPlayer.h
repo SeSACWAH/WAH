@@ -91,7 +91,7 @@ protected:
     void MulticastRPC_Revive();
 public:
     bool GetIsDead(){ return bIsDead; }
-    void OnDamaged(int32 InDamage);
+    virtual void OnDamaged(int32 InDamage);
 #pragma endregion
 
 #pragma region Getters
