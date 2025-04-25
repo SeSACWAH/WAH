@@ -10,7 +10,7 @@ ACWAHGameMode::ACWAHGameMode()
 {
     bStartPlayersAsSpectators = true;
 
-    ConstructorHelpers::FClassFinder<APlayerController> controller(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/DYL/UIs/WBP_ChoosePlayer.WBP_ChoosePlayer'_C"));
+    ConstructorHelpers::FClassFinder<APlayerController> controller(TEXT("/Script/Engine.Blueprint'/Game/DYL/Blueprints/BP_WPlayerController.BP_WPlayerController_C'"));
     if (controller.Succeeded())
         PlayerControllerClass = controller.Class;
 }

@@ -17,8 +17,7 @@
 #include "EngineUtils.h"
 #include "Net/UnrealNetwork.h"
 #include "Engine/Engine.h"
-#include "Components/SceneCaptureComponent2D.h"
-#include "Sys/WPlayerController.h"
+#include "../../../../../../../Source/Runtime/Engine/Classes/Components/SceneCaptureComponent2D.h"
 
 ACPlayer::ACPlayer()
 {
@@ -369,7 +368,12 @@ void ACPlayer::ServerRPC_StartDash_Implementation()
     DashStartPos = GetActorLocation();
     DashEndPos = GetActorLocation() + GetActorForwardVector() * DashDistance;
 
-    bCanDash = true;
+    MulticastRPC_UpdateCanDash(true);
+}
+
+void ACPlayer::MulticastRPC_UpdateCanDash_Implementation(bool InResult)
+{
+    bCanDash = InResult;
 }
 
 void ACPlayer::DoDash(float InDeltaTime)
@@ -382,7 +386,7 @@ void ACPlayer::DoDash(float InDeltaTime)
     if (DashCurrentTime >= DashDurationTime)
     {
         SetActorLocation(DashEndPos);
-        bCanDash = false;
+        MulticastRPC_UpdateCanDash(false);
         DashCurrentTime = 0;
         bCanResetDash = true;
     }

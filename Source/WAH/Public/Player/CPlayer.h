@@ -183,10 +183,6 @@ protected:
     UPROPERTY(Replicated)
     bool bCanDash = false;
 
-public:
-    bool GetCanDash(){ return bCanDash; }
-
-protected:
     UPROPERTY(Replicated)
     bool bCanResetDash = false;
 
@@ -206,9 +202,17 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = Dash)
     float DashCoolDownTime = 0.7f;
 
-    void StartDash(const FInputActionValue& InValue);
+    ////// 추가
+public:
+    bool GetCanDash() { return bCanDash; }
+protected:
+    virtual void StartDash(const FInputActionValue& InValue);
+    ////// 추가 끝
+
     UFUNCTION(Server, Reliable)
     void ServerRPC_StartDash();
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastRPC_UpdateCanDash(bool InResult);
     void DoDash(float InDeltaTime);
     void ResetDash(float InDeltaTime);
 #pragma endregion
