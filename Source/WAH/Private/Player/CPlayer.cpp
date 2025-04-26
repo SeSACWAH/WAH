@@ -102,6 +102,8 @@ ACPlayer::ACPlayer()
 void ACPlayer::BeginPlay()
 {
     Super::BeginPlay();
+
+
 }
 
 void ACPlayer::Tick(float DeltaTime)
@@ -431,6 +433,11 @@ void ACPlayer::ResetDash(float InDeltaTime)
 
 void ACPlayer::InitCrosshairWidgets()
 {
+}
+
+void ACPlayer::InItBattleWidget()
+{
+
 }
 
 void ACPlayer::SetUnlockedCrosshairVisibility(bool bVisible)

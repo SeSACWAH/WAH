@@ -295,6 +295,8 @@ protected:
 
     virtual void InitCrosshairWidgets();
 
+    virtual void InItBattleWidget();
+
     virtual void SetUnlockedCrosshairVisibility(bool bVisible);
     virtual void SetLockedCrosshairVisibility(bool bVisible);
 

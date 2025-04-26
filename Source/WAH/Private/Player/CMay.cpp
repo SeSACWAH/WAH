@@ -55,6 +55,7 @@ void ACMay::PossessedBy(AController* NewController)
     if (IsLocallyControlled())
     {
         InitCrosshairWidgets();
+        InItBattleWidget();
     }
 }
 
@@ -237,6 +238,16 @@ void ACMay::MulticastRPC_CompleteAim_Implementation()
     bUseControllerRotationYaw = false;
 }
 
+void ACMay::InItBattleWidget()
+{
+    if (BattleWidget && BattleUI == nullptr)
+    {
+        BattleUI = Cast<UCBattleUI>(CreateWidget(GetWorld(), BattleWidget));
+        BattleUI->SetVisibility(ESlateVisibility::Visible);
+        BattleUI->AddToViewport();
+    }
+}
+
 void ACMay::OnDamaged(int32 InDamage)
 {
     Super::OnDamaged(InDamage);
@@ -250,7 +261,7 @@ void ACMay::ServerRPC_UpdateUIHP_Implementation()
 
 void ACMay::MulticastRPC_UpdateUIHP_Implementation()
 {
-    //BattleUI->UpdateMPCPlayerHP(false, HP, MaxHP);
+    BattleUI->UpdateMPCPlayerHP(false, HP, MaxHP);
 }
 
 void ACMay::OnDead()
