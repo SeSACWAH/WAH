@@ -10,6 +10,7 @@
 #include "../../../../../../../Source/Runtime/Engine/Classes/GameFramework/SpringArmComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Animation/CMayAnim.h"
+#include "UI/CBattleUI.h"
 
 ACMay::ACMay()
 {
@@ -114,8 +115,6 @@ void ACMay::StartAim(const FInputActionValue& InValue)
     if (bIsDead || bIsDamaged || bIsReviving) return;
 
     ServerRPC_StartAim();
-    //bUseControllerRotationYaw = true;
-    bCanAim = true;
     bCanZoom = true;
 
     if (CameraBoom->GetComponentLocation() == CameraBoomLocationDefault) ZoomCurrentTime = 0;
@@ -124,19 +123,17 @@ void ACMay::StartAim(const FInputActionValue& InValue)
 
 void ACMay::ServerRPC_StartAim_Implementation()
 {
-    //bCanAim = true;
-    //bCanZoom = true;
     MulticastRPC_StartAim();
 }
 
 void ACMay::MulticastRPC_StartAim_Implementation()
 {
+    bCanAim = true;
     bUseControllerRotationYaw = true;
 }
 
 void ACMay::AdjustTargetArmLocation(float InDeltaTime)
 {
-    //UE_LOG(LogTemp, Warning, TEXT(">>> Start Adjust Target Arm Location <<<"));
     float ratio;
 
     if (bCanZoom) ZoomCurrentTime += InDeltaTime;
@@ -225,22 +222,35 @@ void ACMay::CompleteAim(const FInputActionValue& InValue)
     SetLockedCrosshairVisibility(false);
 
 
-    ServerRPC_CompleteAim();
-    //bUseControllerRotationYaw = false;
-    bCanAim = false;
+    ServerRPC_CompleteAim();    
     bCanZoom = false;
 }
 
 void ACMay::ServerRPC_CompleteAim_Implementation()
 {
     MulticastRPC_CompleteAim();
-    //bCanAim = false;
-    //bCanZoom = false;
 }
 
 void ACMay::MulticastRPC_CompleteAim_Implementation()
 {
+    bCanAim = false;
     bUseControllerRotationYaw = false;
+}
+
+void ACMay::OnDamaged(int32 InDamage)
+{
+    Super::OnDamaged(InDamage);
+    ServerRPC_UpdateUIHP();
+}
+
+void ACMay::ServerRPC_UpdateUIHP_Implementation()
+{
+    MulticastRPC_UpdateUIHP();
+}
+
+void ACMay::MulticastRPC_UpdateUIHP_Implementation()
+{
+    //BattleUI->UpdateMPCPlayerHP(false, HP, MaxHP);
 }
 
 void ACMay::OnDead()
@@ -267,30 +277,10 @@ void ACMay::DoFire()
     if (!bCanAim || CurrentBulletCount == 0 || bIsInFireDelayTime) return;
 
     ServerRPC_DoFire();
-    //// UE_LOG(LogTemp, Error, TEXT(">>>>> Fire Input Entered <<<<<"));
-    //CurrentBulletCount--;
-    //MatchGun->FireBullet(FireDestination);
-    //bIsInFireDelayTime = true;
-    //// UE_LOG(LogTemp, Error, TEXT(">>> Current Bullet : %d"), CurrentBulletCount);
-
-    //// Fire Delay Time 동안에는 Fire 불가
-    //FTimerHandle fireDelayTimer;
-    //auto fireDelayLambda = [&]() { bIsInFireDelayTime = false; };
-    //GetWorld()->GetTimerManager().SetTimer(fireDelayTimer, fireDelayLambda, FireDelayTime, false);
-
-    //// 일정 시간이 지나면 Ammo 자동 충전
-    //FTimerHandle chargeAmmoTimer;
-    //auto chargeAmmoLambda = [&]() {
-    //    if (CurrentBulletCount >= MaxBulletCount) return;
-    //    CurrentBulletCount++;
-    //    // UE_LOG(LogTemp, Error, TEXT(">>> Current Bullet : %d"), CurrentBulletCount);
-    //    };
-    //GetWorld()->GetTimerManager().SetTimer(chargeAmmoTimer, chargeAmmoLambda, ChargeAmmoTime, false);
 }
 
 void ACMay::ServerRPC_DoFire_Implementation()
 {
-    // UE_LOG(LogTemp, Error, TEXT(">>>>> Fire Input Entered <<<<<"));
     CurrentBulletCount--;
     MatchGun->FireBullet(FireDestination);
     bIsInFireDelayTime = true;
@@ -315,19 +305,19 @@ void ACMay::StartDash(const FInputActionValue& InValue)
 {
     Super::StartDash(InValue);
 
-    UE_LOG(LogTemp, Warning, TEXT("MAY DASH>>> Client / bCanDash : %d"), bCanDash);
+    //UE_LOG(LogTemp, Warning, TEXT("MAY DASH>>> Client / bCanDash : %d"), bCanDash);
     ServerRPC_MayPlayDashAnim();
 }
 
 void ACMay::ServerRPC_MayPlayDashAnim_Implementation()
 {
-    UE_LOG(LogTemp, Warning, TEXT("MAY DASH>>> Server / bCanDash : %d"), bCanDash);
+    //UE_LOG(LogTemp, Warning, TEXT("MAY DASH>>> Server / bCanDash : %d"), bCanDash);
     MulticastRPC_MayPlayDashAnim();
 }
 
 void ACMay::MulticastRPC_MayPlayDashAnim_Implementation()
 {
-    UE_LOG(LogTemp, Warning, TEXT("MAY DASH>>> Multicast / bCanDash : %d"), bCanDash);
+    //UE_LOG(LogTemp, Warning, TEXT("MAY DASH>>> Multicast / bCanDash : %d"), bCanDash);
     auto anim = Cast<UCMayAnim>(GetMesh()->GetAnimInstance());
     anim->PlayDashAnimation();
 }
