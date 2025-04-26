@@ -22,9 +22,21 @@ void UCMayAnim::NativeUpdateAnimation(float InDeltaSeconds)
         Speed = FVector::DotProduct(May->GetVelocity(), May->GetActorForwardVector());
         Direction = FVector::DotProduct(May->GetVelocity(), May->GetActorRightVector());
         bCanAim = May->GetCanAim();
-        bIsFalling = May->GetCharacterMovement()->IsFalling();
-        bWasJumping = May->bWasJumping;
-        JumpCurrentCount = May->JumpCurrentCount;
+
+        bIsFalling = May->bIsFalling;
+        JumpCurrentCount = May->PlayerJumpCurrentCount;
+
+        if (JumpCurrentCount >= 1)
+        {
+            if (May->HasAuthority())
+            {
+                UE_LOG(LogTemp, Warning, TEXT("SERVER : %d / %d"), bIsFalling, JumpCurrentCount);
+            }
+            else
+            {
+                UE_LOG(LogTemp, Error, TEXT("CLIENT : %d / %d"), bIsFalling, JumpCurrentCount);
+            }
+        }
     }
 }
 

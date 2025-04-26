@@ -128,6 +128,9 @@ void ACPlayer::Tick(float DeltaTime)
     {
         // Aim
         AdjustTargetArmLocation(DeltaTime);
+
+        // Jump
+        ServerRPC_UpdateJumpInfo();
     }
 }
 
@@ -173,7 +176,7 @@ void ACPlayer::PossessedBy(AController* NewController)
 void ACPlayer::OnRep_HP(int32 InDamage)
 {
     GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, FString::Printf(TEXT("[DAMAGED] Player Get DAMAGED : %d"), HP));
-
+    
     bIsDamaged = true;
     if (HP <= 0)
     {
@@ -342,6 +345,29 @@ void ACPlayer::DoJump(const FInputActionValue& InValue)
 {
     if (bIsDead || bIsReviving) return;
 
+    //Jump();
+    ServerRPC_DoJump();
+}
+
+void ACPlayer::ServerRPC_UpdateJumpInfo_Implementation()
+{
+    //UE_LOG(LogTemp, Warning, TEXT("Server >> JUMP"));
+    MulticastRPC_UpdateJumpInfo();
+}
+
+void ACPlayer::MulticastRPC_UpdateJumpInfo_Implementation()
+{
+    bIsFalling = GetCharacterMovement()->IsFalling();
+    PlayerJumpCurrentCount = JumpCurrentCount;
+}
+
+void ACPlayer::ServerRPC_DoJump_Implementation()
+{
+    MulticastRPC_DoJump();
+}
+
+void ACPlayer::MulticastRPC_DoJump_Implementation()
+{
     Jump();
 }
 
@@ -487,6 +513,9 @@ void ACPlayer::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
     DOREPLIFETIME(ACPlayer, bIsRevivalInputEntered);
     DOREPLIFETIME(ACPlayer, CurrentReviveTime);
     DOREPLIFETIME(ACPlayer, DebugReviveTime);
+
+    DOREPLIFETIME(ACPlayer, bIsFalling);
+    DOREPLIFETIME(ACPlayer, PlayerJumpCurrentCount);
 }
 
 #pragma region TEST
