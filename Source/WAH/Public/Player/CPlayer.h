@@ -166,11 +166,32 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = Move)
     float SpeedRun = 800.f;
 
+    // Jump
+public:
+    UPROPERTY(Replicated)
+	bool bIsFalling;
+
+	UPROPERTY(Replicated)
+	int32 PlayerJumpCurrentCount;
+
+protected:
     void DoMove(const struct FInputActionValue& InValue);
 
     void DoTurn(const struct FInputActionValue& InValue);
 
     void DoJump(const struct FInputActionValue& InValue);
+
+    UFUNCTION(Server, Reliable)
+    void ServerRPC_UpdateJumpInfo();
+
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastRPC_UpdateJumpInfo();
+
+    UFUNCTION(Server, Reliable)
+    void ServerRPC_DoJump();
+
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastRPC_DoJump();
 
     void DoRun(const struct FInputActionValue& InValue);
 
@@ -218,22 +239,6 @@ protected:
 #pragma endregion
 
 #pragma region Aim
-    /*  Aim에서 구현해야 할 것
-    - UnlockedCrosshairUI가 정중앙에 떠 있다
-        - UnlockedCrosshairUI->SetVisibility(true)
-        - LockedCrossshairUI->SetVisibility(false)
-    - Zoom in이 실행된다 - Camera Boom의 길이가 짧아지게 구현
-    - 마우스 감도가 낮아진다 - Turn이 느리게 바뀌도록 구현
-    - 카메라 위치가 바뀐다 - Camera / Camera Boom의 Location이 바뀌도록 구현
-    - damage 상태면 안보임
-    - Sphere Trace를 진행한다
-
-    여기서부터 May랑 Cody가 다름
-    - 상호작용 가능한 물체에 Sphere Trace로 hit가 되면 활성화 - AimedCrosshairUI가 뜸
-        - UnlockedCrosshairUI->SetVisibility(false)
-        - LockedCrossshairUI->SetVisibility(true)
-    - 일정 범위 안에 들어왔으면 Aim이 활성화된다
-    */
     UPROPERTY(EditDefaultsOnly, Category = Input)
     class UInputAction* IA_Aim;
 

@@ -115,7 +115,6 @@ void ACMay::StartAim(const FInputActionValue& InValue)
     if (bIsDead || bIsDamaged || bIsReviving) return;
 
     ServerRPC_StartAim();
-    bCanAim = true;
     bCanZoom = true;
 
     if (CameraBoom->GetComponentLocation() == CameraBoomLocationDefault) ZoomCurrentTime = 0;
@@ -129,6 +128,7 @@ void ACMay::ServerRPC_StartAim_Implementation()
 
 void ACMay::MulticastRPC_StartAim_Implementation()
 {
+    bCanAim = true;
     bUseControllerRotationYaw = true;
 }
 
@@ -222,8 +222,7 @@ void ACMay::CompleteAim(const FInputActionValue& InValue)
     SetLockedCrosshairVisibility(false);
 
 
-    ServerRPC_CompleteAim();
-    bCanAim = false;
+    ServerRPC_CompleteAim();    
     bCanZoom = false;
 }
 
@@ -234,6 +233,7 @@ void ACMay::ServerRPC_CompleteAim_Implementation()
 
 void ACMay::MulticastRPC_CompleteAim_Implementation()
 {
+    bCanAim = false;
     bUseControllerRotationYaw = false;
 }
 
@@ -305,19 +305,19 @@ void ACMay::StartDash(const FInputActionValue& InValue)
 {
     Super::StartDash(InValue);
 
-    UE_LOG(LogTemp, Warning, TEXT("MAY DASH>>> Client / bCanDash : %d"), bCanDash);
+    //UE_LOG(LogTemp, Warning, TEXT("MAY DASH>>> Client / bCanDash : %d"), bCanDash);
     ServerRPC_MayPlayDashAnim();
 }
 
 void ACMay::ServerRPC_MayPlayDashAnim_Implementation()
 {
-    UE_LOG(LogTemp, Warning, TEXT("MAY DASH>>> Server / bCanDash : %d"), bCanDash);
+    //UE_LOG(LogTemp, Warning, TEXT("MAY DASH>>> Server / bCanDash : %d"), bCanDash);
     MulticastRPC_MayPlayDashAnim();
 }
 
 void ACMay::MulticastRPC_MayPlayDashAnim_Implementation()
 {
-    UE_LOG(LogTemp, Warning, TEXT("MAY DASH>>> Multicast / bCanDash : %d"), bCanDash);
+    //UE_LOG(LogTemp, Warning, TEXT("MAY DASH>>> Multicast / bCanDash : %d"), bCanDash);
     auto anim = Cast<UCMayAnim>(GetMesh()->GetAnimInstance());
     anim->PlayDashAnimation();
 }
