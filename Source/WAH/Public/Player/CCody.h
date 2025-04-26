@@ -40,15 +40,34 @@ public:
 
 	virtual void OnRevive(float InDeltaTime) override;
 
+	virtual void StartAim(const FInputActionValue& InValue) override;
+
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_StartAim();
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastRPC_StartAim();
+
+	virtual void CompleteAim(const FInputActionValue& InValue) override;
+
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_CompleteAim();
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastRPC_CompleteAim();
+
 	UPROPERTY(ReplicatedUsing=OnRep_CameraBoomRotation)
     FRotator CameraBoomRotation;
 
+	UPROPERTY(ReplicatedUsing=OnRep_CameraBoomPosition)
+    FVector CameraBoomPosition;
+
     UFUNCTION()
     void OnRep_CameraBoomRotation();
+	UFUNCTION()
+    void OnRep_CameraBoomPosition();
 
 
     UFUNCTION(NetMulticast, Unreliable)
-    void MulticastRPC_UpdateCaptureRotation(FRotator rot);
+    void MulticastRPC_UpdateCaptureRotation(FVector loc, FRotator rot);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 };
