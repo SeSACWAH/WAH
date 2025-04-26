@@ -21,10 +21,10 @@ void UCCodyAnim::NativeUpdateAnimation(float DeltaTime)
 		Direction = FVector::DotProduct(Velocity,Cody->GetActorRightVector());
 		bCanAim = Cody->GetCanAim();
 		bIsFalling = Cody->GetCharacterMovement()->IsFalling();
-		bWasJumping = Cody->bWasJumping;
-		JumpCurrentCount = Cody->JumpCurrentCount;
+		//bWasJumping = Cody->bWasJumping;
+		JumpCurrentCount = Cody->PlayerJumpCurrentCount;
 
-		pitchAngle =  - Cody->GetBaseAimRotation().GetNormalized().Pitch;
+		pitchAngle =  Cody->GetBaseAimRotation().GetNormalized().Pitch;
 	}
 }
 
