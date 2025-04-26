@@ -11,6 +11,7 @@
 #include "EngineUtils.h"
 #include "Net/UnrealNetwork.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 ACCody::ACCody()
 {
@@ -38,13 +39,15 @@ void ACCody::Tick(float DeltaTime)
 	
 	if (HasAuthority())
 	{
+		APlayerCameraManager* playerCM = GetWorld()->GetFirstPlayerController()->PlayerCameraManager;
 		auto pc = Cast<APlayerController>(GetWorld()->GetFirstPlayerController());
-		if (pc)
+		if (playerCM)
 		{
-			//CameraBoomRotation = pc->GetControlRotation();
+			CameraBoomRotation = playerCM->GetCameraRotation();
+			CameraBoomPosition = playerCM->GetCameraLocation();
 		}
 		
-		//MulticastRPC_UpdateCaptureRotation(CameraBoomRotation);
+		MulticastRPC_UpdateCaptureRotation(CameraBoomPosition, CameraBoomRotation);
 	}
 }
 
@@ -82,24 +85,68 @@ void ACCody::OnRevive(float InDeltaTime)
 }
 
 
-void ACCody::OnRep_CameraBoomRotation()
+void ACCody::StartAim(const FInputActionValue& InValue)
 {
-	//if (SceneCapture2D)
-	//{
-	//	SceneCapture2D->SetRelativeRotation(CameraBoomRotation);
-	//}
+	if(bIsDead || bIsDamaged || bIsReviving) return;
+	ServerRPC_StartAim();
+	bCanAim = true;
+	bCanZoom = true;
 }
 
-void ACCody::MulticastRPC_UpdateCaptureRotation_Implementation(FRotator rot)
+void ACCody::ServerRPC_StartAim_Implementation()
 {
-	//if (CameraBoom)
-	//{
-	//	CameraBoom->SetRelativeRotation(rot);
-	//}
+	MulticastRPC_StartAim();
+}
+
+void ACCody::MulticastRPC_StartAim_Implementation()
+{
+	GetCharacterMovement()->bOrientRotationToMovement = false;
+}
+
+void ACCody::CompleteAim(const FInputActionValue& InValue)
+{
+	ServerRPC_CompleteAim();
+	bCanAim = false;
+	bCanZoom = false;
+}
+
+void ACCody::ServerRPC_CompleteAim_Implementation()
+{
+	MulticastRPC_CompleteAim();
+}
+
+void ACCody::MulticastRPC_CompleteAim_Implementation()
+{
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+}
+
+void ACCody::OnRep_CameraBoomRotation()
+{
+	if (SceneCapture2D)
+	{
+		SceneCapture2D->SetRelativeRotation(CameraBoomRotation);
+	}
+}
+
+void ACCody::OnRep_CameraBoomPosition()
+{
+	if (SceneCapture2D)
+	{
+		SceneCapture2D->SetRelativeRotation(CameraBoomRotation);
+	}
+}
+
+void ACCody::MulticastRPC_UpdateCaptureRotation_Implementation(FVector loc, FRotator rot)
+{
+	if (SceneCapture2D)
+	{
+		SceneCapture2D->SetRelativeLocationAndRotation(loc , rot);
+	}
 }
 
 void ACCody::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ACCody, CameraBoomRotation);
+	DOREPLIFETIME(ACCody, CameraBoomPosition);
 }
