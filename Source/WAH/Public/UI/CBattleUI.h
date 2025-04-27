@@ -9,7 +9,23 @@ class WAH_API UCBattleUI : public UUserWidget
 {
 	GENERATED_BODY()
 
+protected:
+	virtual void NativeConstruct() override;
+
 public:
+	// 원본 머티리얼 인스턴스
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ProgressBar|Cody")
+	class UMaterialInterface* ProgressMaterialMay;  
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ProgressBar|May")
+	class UMaterialInterface* ProgressMaterialMay;  
+
+	// 복사본
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "ProgressBar|Cody")
+	class UMaterialInstanceDynamic* DynamicMaterialCody; 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "ProgressBar|May")
+	class UMaterialInstanceDynamic* DynamicMaterialMay; 
+
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "HP")
 	float HPBeetle = 1.0;
 

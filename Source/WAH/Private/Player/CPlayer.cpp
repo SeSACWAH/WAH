@@ -188,7 +188,7 @@ void ACPlayer::OnRep_HP(int32 InDamage)
 
     auto lambda = [&]() {
         GetWorld()->GetTimerManager().ClearTimer(DamageTimer);
-        //RecoverHP();
+        
         auto lambda = [&]() {
             GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, TEXT("[DAMAGED] TIMER END @@@@@@@@@@@@@@"));
             if (HP < MaxHP)
