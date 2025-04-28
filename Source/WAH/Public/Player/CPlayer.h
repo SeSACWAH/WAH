@@ -29,9 +29,27 @@ protected:
     FTimerHandle DamageTimer;
     FTimerHandle RecoverTimer;
 
+    UPROPERTY(Replicated)
+    bool bIsCody = false;
+
     int32 MaxHP = 12;
     UPROPERTY(ReplicatedUsing = OnRep_HP)
     int32 HP = MaxHP;
+
+    UPROPERTY(EditAnywhere, Category = UI)
+    TSubclassOf<class UCBattleUI> BattleWidget;
+
+    UPROPERTY()
+	class UCBattleUI* BattleUI;
+
+    UFUNCTION(Server, Reliable)
+    void ServerRPC_UpdateUIHP();
+
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastRPC_UpdateUIHP();
+
+    virtual void InItBattleWidget();
+
 
     UPROPERTY(Replicated)
     bool bIsDamaged = false;
@@ -79,10 +97,7 @@ protected:
     void MulticastRPC_ReviveInputEntered(float InDeltaTime);
 
     UFUNCTION()
-    void OnRep_HP(int32 InDamage);
-
-    UFUNCTION(Server, Reliable)
-    void ServerRPC_SetHP(float InDamage);
+    void OnRep_HP();
 
     UFUNCTION(NetMulticast, Reliable)
     void MulticastRPC_Dead();
@@ -91,6 +106,9 @@ protected:
     void MulticastRPC_Revive();
 public:
     bool GetIsDead(){ return bIsDead; }
+
+    UFUNCTION(Server, Reliable)
+    void ServerRPC_OnDamaged(int32 InDamage);
     virtual void OnDamaged(int32 InDamage);
 #pragma endregion
 

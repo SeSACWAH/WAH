@@ -14,6 +14,8 @@
 
 ACMay::ACMay()
 {
+    bIsCody = false;
+
     // Skeleta Mesh
     ConstructorHelpers::FObjectFinder<USkeletalMesh> tmpMesh(TEXT("/Script/Engine.SkeletalMesh'/Game/Net/May/May.May'"));
     if(tmpMesh.Succeeded()) GetMesh()->SetSkeletalMesh(tmpMesh.Object);
@@ -57,8 +59,6 @@ void ACMay::PossessedBy(AController* NewController)
         InitCrosshairWidgets();
     }
 }
-
-
 
 void ACMay::AttachGun()
 {
@@ -237,21 +237,31 @@ void ACMay::MulticastRPC_CompleteAim_Implementation()
     bUseControllerRotationYaw = false;
 }
 
+//void ACMay::InItBattleWidget()
+//{
+//    if (BattleWidget && BattleUI == nullptr)
+//    {
+//        BattleUI = Cast<UCBattleUI>(CreateWidget(GetWorld(), BattleWidget));
+//        BattleUI->SetVisibility(ESlateVisibility::Visible);
+//        BattleUI->AddToViewport();
+//    }
+//}
+
 void ACMay::OnDamaged(int32 InDamage)
 {
     Super::OnDamaged(InDamage);
-    ServerRPC_UpdateUIHP();
+    //ServerRPC_UpdateUIHP();
 }
 
-void ACMay::ServerRPC_UpdateUIHP_Implementation()
-{
-    MulticastRPC_UpdateUIHP();
-}
-
-void ACMay::MulticastRPC_UpdateUIHP_Implementation()
-{
-    //BattleUI->UpdateMPCPlayerHP(false, HP, MaxHP);
-}
+//void ACMay::ServerRPC_UpdateUIHP_Implementation()
+//{
+//    MulticastRPC_UpdateUIHP();
+//}
+//
+//void ACMay::MulticastRPC_UpdateUIHP_Implementation()
+//{
+//    BattleUI->UpdateMPCPlayerHP(false, HP, MaxHP);
+//}
 
 void ACMay::OnDead()
 {
