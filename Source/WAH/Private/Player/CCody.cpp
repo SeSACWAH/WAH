@@ -12,6 +12,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Animation/CCodyAnim.h"
 
 ACCody::ACCody()
 {
@@ -53,6 +54,9 @@ void ACCody::Tick(float DeltaTime)
 
 void ACCody::DoFire()
 {
+	if(bIsDead || bIsReviving) return;
+
+	if(!bCanAim) return;
 	ServerRPC_Fire();
 }
 
@@ -89,8 +93,6 @@ void ACCody::StartAim(const FInputActionValue& InValue)
 {
 	if(bIsDead || bIsDamaged || bIsReviving) return;
 	ServerRPC_StartAim();
-	bCanAim = true;
-	bCanZoom = true;
 }
 
 void ACCody::ServerRPC_StartAim_Implementation()
@@ -100,14 +102,28 @@ void ACCody::ServerRPC_StartAim_Implementation()
 
 void ACCody::MulticastRPC_StartAim_Implementation()
 {
+	bCanAim = true;
+	bCanZoom = true;
 	GetCharacterMovement()->bOrientRotationToMovement = false;
+}
+
+void ACCody::AdjustTargetArmLocation(float InDeltaTime)
+{
+	float ratio;
+
+	if (bCanZoom) ZoomCurrentTime += InDeltaTime;
+	else ZoomCurrentTime -= InDeltaTime;
+
+	// CurTime이 범위를 벗어나는 것을 한정해줌
+	ZoomCurrentTime = FMath::Clamp(ZoomCurrentTime, 0, AimZoomMaxTime);
+
+	ratio = EaseInOutQuad(ZoomCurrentTime / AimZoomMaxTime);
+	CameraBoom->SetRelativeLocation(FMath::Lerp(CameraBoomLocationDefault, CameraBoomLocationZoomIn, ratio));
 }
 
 void ACCody::CompleteAim(const FInputActionValue& InValue)
 {
 	ServerRPC_CompleteAim();
-	bCanAim = false;
-	bCanZoom = false;
 }
 
 void ACCody::ServerRPC_CompleteAim_Implementation()
@@ -117,7 +133,27 @@ void ACCody::ServerRPC_CompleteAim_Implementation()
 
 void ACCody::MulticastRPC_CompleteAim_Implementation()
 {
+	bCanAim = false;
+	bCanZoom = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
+}
+
+void ACCody::StartDash(const FInputActionValue& InValue)
+{
+	Super::StartDash(InValue);
+
+	ServerRPC_PlayDashAnim();
+}
+
+void ACCody::ServerRPC_PlayDashAnim_Implementation()
+{
+	MulticastRPC_PlayDashAnim();
+}
+
+void ACCody::MulticastRPC_PlayDashAnim_Implementation()
+{
+	auto anim = Cast<UCCodyAnim>(GetMesh()->GetAnimInstance());
+	anim->PlayDashAnimation();
 }
 
 void ACCody::OnRep_CameraBoomRotation()
