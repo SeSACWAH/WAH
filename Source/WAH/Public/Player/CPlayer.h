@@ -106,6 +106,9 @@ protected:
     void MulticastRPC_Revive();
 public:
     bool GetIsDead(){ return bIsDead; }
+
+    UFUNCTION(Server, Reliable)
+    void ServerRPC_OnDamaged(int32 InDamage);
     virtual void OnDamaged(int32 InDamage);
 #pragma endregion
 

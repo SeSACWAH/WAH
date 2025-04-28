@@ -200,26 +200,12 @@ void ACPlayer::OnRep_HP()
     }
 }
 
-void ACPlayer::OnDamaged(int32 InDamage)
+void ACPlayer::ServerRPC_OnDamaged_Implementation(int32 InDamage)
 {
-    //if (bIsGodMode || bIsDead) return;
-
-    if (bIsGodMode) 
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[GOD MODE] Damage Ignore"));
-        return;
-    }
-
-    if (bIsDead)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[DEAD MODE] Damage Ignore"));
-        return;
-    }
-
     HP -= InDamage;
     OnRep_HP();
 
-    auto lambda = [&]() {
+    auto lambdaOut = [&]() {
         GetWorld()->GetTimerManager().ClearTimer(DamageTimer);
 
         auto lambda = [&]() {
@@ -239,7 +225,50 @@ void ACPlayer::OnDamaged(int32 InDamage)
             };
         GetWorld()->GetTimerManager().SetTimer(RecoverTimer, lambda, RecoverTime, true);
         };
-    GetWorld()->GetTimerManager().SetTimer(DamageTimer, lambda, DamageDurationTime, false);
+    GetWorld()->GetTimerManager().SetTimer(DamageTimer, lambdaOut, DamageDurationTime, false);
+}
+
+void ACPlayer::OnDamaged(int32 InDamage)
+{
+    //if (bIsGodMode || bIsDead) return;
+
+    if (bIsGodMode) 
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[GOD MODE] Damage Ignore"));
+        return;
+    }
+
+    if (bIsDead)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[DEAD MODE] Damage Ignore"));
+        return;
+    }
+
+    ServerRPC_OnDamaged(InDamage);
+   /* HP -= InDamage;
+    OnRep_HP();
+
+    auto lambdaOut = [&]() {
+        GetWorld()->GetTimerManager().ClearTimer(DamageTimer);
+
+        auto lambda = [&]() {
+            GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, TEXT("[DAMAGED] TIMER END @@@@@@@@@@@@@@"));
+            if (HP < MaxHP)
+            {
+                GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, FString::Printf(TEXT("[DAMAGED] Current HP : %d"), HP));
+                HP++;
+                OnRep_HP();
+            }
+            else
+            {
+                GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, FString::Printf(TEXT("[DAMAGED] HP RECOVERED !!!: %d"), HP));
+                bIsDamaged = false;
+                GetWorld()->GetTimerManager().ClearTimer(RecoverTimer);
+            }
+            };
+        GetWorld()->GetTimerManager().SetTimer(RecoverTimer, lambda, RecoverTime, true);
+        };
+    GetWorld()->GetTimerManager().SetTimer(DamageTimer, lambdaOut, DamageDurationTime, false);*/
 }
 
 void ACPlayer::OnDead()
