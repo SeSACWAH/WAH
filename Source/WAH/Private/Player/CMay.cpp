@@ -57,7 +57,6 @@ void ACMay::PossessedBy(AController* NewController)
     if (IsLocallyControlled())
     {
         InitCrosshairWidgets();
-        //InItBattleWidget();
     }
 }
 

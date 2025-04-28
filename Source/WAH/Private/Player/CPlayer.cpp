@@ -19,6 +19,7 @@
 #include "Engine/Engine.h"
 #include "../../../../../../../Source/Runtime/Engine/Classes/Components/SceneCaptureComponent2D.h"
 #include "UI/CBattleUI.h"
+#include "Sys/WPlayerController.h"
 
 ACPlayer::ACPlayer()
 {
@@ -104,7 +105,10 @@ void ACPlayer::BeginPlay()
 {
     Super::BeginPlay();
 
-
+    if (IsLocallyControlled() && HasAuthority() == false)
+    {
+        InItBattleWidget();
+    }
 }
 
 void ACPlayer::Tick(float DeltaTime)
@@ -174,29 +178,57 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 void ACPlayer::PossessedBy(AController* NewController)
 {
     Super::PossessedBy(NewController);
-    InItBattleWidget();
+
+    if (IsLocallyControlled())
+    {
+        InItBattleWidget();
+    }
 }
 
-void ACPlayer::OnRep_HP(int32 InDamage)
+void ACPlayer::OnRep_HP()
 {
     GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, FString::Printf(TEXT("[DAMAGED] Player Get DAMAGED : %d"), HP));
-    
+
+    auto pc = Cast<AWPlayerController>(Controller);
+    if(pc) BattleUI->UpdateMPCPlayerHP(bIsCody, HP, MaxHP);
+
     bIsDamaged = true;
     if (HP <= 0)
     {
         OnDead();
         return;
     }
+}
+
+void ACPlayer::OnDamaged(int32 InDamage)
+{
+    //if (bIsGodMode || bIsDead) return;
+
+    if (bIsGodMode) 
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[GOD MODE] Damage Ignore"));
+        return;
+    }
+
+    if (bIsDead)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[DEAD MODE] Damage Ignore"));
+        return;
+    }
+
+    HP -= InDamage;
+    OnRep_HP();
 
     auto lambda = [&]() {
         GetWorld()->GetTimerManager().ClearTimer(DamageTimer);
-        
+
         auto lambda = [&]() {
             GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, TEXT("[DAMAGED] TIMER END @@@@@@@@@@@@@@"));
             if (HP < MaxHP)
             {
                 GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, FString::Printf(TEXT("[DAMAGED] Current HP : %d"), HP));
                 HP++;
+                OnRep_HP();
             }
             else
             {
@@ -208,13 +240,6 @@ void ACPlayer::OnRep_HP(int32 InDamage)
         GetWorld()->GetTimerManager().SetTimer(RecoverTimer, lambda, RecoverTime, true);
         };
     GetWorld()->GetTimerManager().SetTimer(DamageTimer, lambda, DamageDurationTime, false);
-}
-
-void ACPlayer::OnDamaged(int32 InDamage)
-{
-    if (bIsGodMode || bIsDead) return;
-    ServerRPC_SetHP(InDamage);
-    ServerRPC_UpdateUIHP();
 }
 
 void ACPlayer::OnDead()
@@ -261,13 +286,6 @@ void ACPlayer::MulticastRPC_ReviveInputEntered_Implementation(float InDeltaTime)
     bIsRevivalInputEntered = false;
 }
 
-void ACPlayer::ServerRPC_SetHP_Implementation(float InDamage)
-{
-    HP -= InDamage;
-
-    if (HasAuthority()) OnRep_HP(InDamage);
-}
-
 void ACPlayer::MulticastRPC_Dead_Implementation()
 {
     bIsDead = true;
@@ -305,6 +323,7 @@ void ACPlayer::MulticastRPC_Revive_Implementation()
     bIsDead = false;
     bIsDamaged = false;
     HP = MaxHP;
+    OnRep_HP();
 
     CurrentReviveTime = 0;
     DebugReviveTime = 0;
@@ -445,6 +464,8 @@ void ACPlayer::ServerRPC_UpdateUIHP_Implementation()
 
 void ACPlayer::MulticastRPC_UpdateUIHP_Implementation()
 {
+    UE_LOG(LogTemp, Warning, TEXT("bIsCody : %d"), bIsCody);
+
     BattleUI->UpdateMPCPlayerHP(bIsCody, HP, MaxHP);
 }
 
@@ -546,13 +567,13 @@ void ACPlayer::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 #pragma region TEST
 void ACPlayer::TestDamage(const FInputActionValue& InValue)
 {
-    UE_LOG(LogTemp, Warning, TEXT("[DAMAGE TEST] DAMAGED!!! Current HP : %d"), 6);
+    UE_LOG(LogTemp, Warning, TEXT("[DAMAGE TEST] DAMAGED!!! Current HP : %d"), HP);
     OnDamaged(6);
 }
 
 void ACPlayer::TestRevival(const FInputActionValue& InValue)
 {
-    UE_LOG(LogTemp, Warning, TEXT("[REVIVAL TEST] DEAD!!! Current HP : %d"), 0);
+    UE_LOG(LogTemp, Warning, TEXT("[REVIVAL TEST] DEAD!!! Current HP : %d"), HP);
     OnDamaged(12);
 }
 #pragma endregion

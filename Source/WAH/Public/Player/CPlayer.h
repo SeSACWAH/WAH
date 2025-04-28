@@ -97,10 +97,7 @@ protected:
     void MulticastRPC_ReviveInputEntered(float InDeltaTime);
 
     UFUNCTION()
-    void OnRep_HP(int32 InDamage);
-
-    UFUNCTION(Server, Reliable)
-    void ServerRPC_SetHP(float InDamage);
+    void OnRep_HP();
 
     UFUNCTION(NetMulticast, Reliable)
     void MulticastRPC_Dead();

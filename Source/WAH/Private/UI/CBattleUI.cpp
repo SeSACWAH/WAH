@@ -49,6 +49,7 @@ void UCBattleUI::UpdateMPCPlayerHP(bool bIsCody, float InCurHP, float InMaxHP)
     // Scalar Parameter 업데이트
     FName paramName = bIsCody ? TEXT("Cody") : TEXT("May");
     collectionInstance->SetScalarParameterValue(paramName, normalizedHP);
+
     float outValue;
     collectionInstance->GetScalarParameterValue(paramName, outValue);
     UE_LOG(LogTemp, Warning, TEXT("UPDATE HP >>> Updated %s's HP : %f"), *paramName.ToString(), outValue);
