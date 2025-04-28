@@ -47,12 +47,21 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastRPC_StartAim();
 
+	virtual void AdjustTargetArmLocation(float InDeltaTime) override;
+
 	virtual void CompleteAim(const FInputActionValue& InValue) override;
 
 	UFUNCTION(Server, Reliable)
 	void ServerRPC_CompleteAim();
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastRPC_CompleteAim();
+
+	virtual void StartDash(const FInputActionValue& InValue) override;
+
+    UFUNCTION(Server, Reliable)
+    void ServerRPC_PlayDashAnim();
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastRPC_PlayDashAnim();
 
 	UPROPERTY(ReplicatedUsing=OnRep_CameraBoomRotation)
     FRotator CameraBoomRotation;

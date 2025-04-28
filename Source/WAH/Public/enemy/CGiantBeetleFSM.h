@@ -47,6 +47,8 @@ public:
 	class ACPlayer* Player2;
 	UPROPERTY(VisibleAnywhere, Category = FSM)
 	class ACGiantBeetle* Me;
+	UPROPERTY(VisibleAnywhere, Category = FSM)
+	class UCBeetleAnim* Anim;
 
 	UPROPERTY()
 	class AAIController* ai;
@@ -70,10 +72,10 @@ public:
 	float ChargeCurve = 0.05f;
 
 	UPROPERTY(EditAnywhere, Category = FSM)
-	float ChargeSpeed = 500;
+	float ChargeSpeed = 1000;
 
 	UPROPERTY(EditAnywhere, Category = FSM)
-	float TJTime = 1.0f;
+	float TJTime = 2.4f;
 
 	float CurTJTime = 0.0f;
 
@@ -82,6 +84,16 @@ public:
 
 	float JumpTotTime;
 	float JumpCurTime;
+
+	float ChargeStompTime = 4.3;
+	float ChargeAttackTime = 1.3;
+	float ChargeCurtime = 0.0;
+	float JumpAgroCurTime = 0.0;
+	float JumpAgroTime = 1.7;
+	float TJumpAgroCurTime = 0.0;
+	float TJumpAgroTime = 2.5;
+	float JumpLandTime = 1.67;
+	float JumpCurLandTime = 0;
 
 	UPROPERTY(EditAnywhere, Category = Jump)
 	float JumpGravity = 980;
@@ -92,7 +104,7 @@ public:
 	float JumpMinDistance = 200;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Jump)
-	float DamageDelayTime = 3;
+	float DamageDelayTime = 3.5;
 
 	float CurDMGTime = 0;
 
@@ -116,6 +128,7 @@ public:
 	FVector TargetLoc;
 
 	bool bWasTriple = true;
+	bool bWasDamaged = false;
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class ACShockwave> ShockwaveFac;

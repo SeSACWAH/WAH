@@ -12,6 +12,8 @@
 #include "Components/CapsuleComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "EngineUtils.h"
+#include "Animation/CbeetleAnim.h"
+#include "AIController.h"
 
 
 
@@ -40,7 +42,8 @@ void UCGiantBeetleFSM::BeginPlay()
 	Player1 = Cast<ACPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(),0));
 	//Player2 = Cast<ACPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(),1));
 	Player2 = Player1;
-	//ai = Cast<AAIController>(Me->GetController());
+	ai = Cast<AAIController>(Me->GetController());
+	Anim = Cast<UCBeetleAnim>(Me->MeshComp->GetAnimInstance());
 }
 
 
@@ -76,9 +79,13 @@ void UCGiantBeetleFSM::IdleState()
 		{
 			TArray<AActor*> actors;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACharacter::StaticClass(), actors);
+			if(actors[0])
+			{
 			Target = Cast<ACPlayer>(actors[FMath::RandRange(0, actors.Num() - 1)]);
+			}
 		}
 		mState = EBeetleState::Retarget;
+		Anim->AnimState = mState;
 		CurIdleTime = 0.0f;
 		CurRotTime = 0.0f;
 	}
@@ -124,14 +131,16 @@ void UCGiantBeetleFSM::RetargetState()
 			//JumpVelocityZ = JumpTotTime * JumpGravity / 2;
 			//mState = EBeetleState::TripleJump;
 			mState = EBeetleState::Charge;
+			Anim->AnimState = mState;
 			CurRotTime = 0.0f;
 			return;
 		}
 		else
 		{
-			if (ChargeCnt < MaxChargeCnt)
+			if (!bWasDamaged && ChargeCnt < MaxChargeCnt)
 			{
 				mState = EBeetleState::Charge;
+				Anim->AnimState = mState;
 			}
 			else
 			{
@@ -141,16 +150,19 @@ void UCGiantBeetleFSM::RetargetState()
 				if (dist > JumpMinDistance && bWasTriple)
 				{
 					FVector jumpDir = JumpEndloc - JumpStartloc;
-					jumpDir.Z = 0;
+					jumpDir.Z = 150;
 					JumpVelocity = jumpDir.GetSafeNormal() * JumpSpeed;
 					JumpTotTime = jumpDir.Length() / JumpSpeed;
 					JumpVelocityZ = JumpTotTime * JumpGravity / 2;
 					mState = EBeetleState::JumpToTarget;
+					Anim->AnimState = mState;
 				}
 				else
 				{
 					mState = EBeetleState::TripleJump;
+					Anim->AnimState = mState;
 				}
+				bWasDamaged = false;
 			}
 		}
 		CurRotTime = 0.0f;
@@ -163,6 +175,7 @@ void UCGiantBeetleFSM::ChargeState()
 	if(Target->GetIsDead()) 
 	{
 		mState = EBeetleState::Idle;
+		Anim->AnimState = mState;
 		Target = nullptr;
 		return;
 	}
@@ -172,7 +185,8 @@ void UCGiantBeetleFSM::ChargeState()
 	FVector curPos = Me->GetActorLocation();
 	curTargetLoc.Z = curPos.Z;
 	FVector vel = Me->GetActorForwardVector();
-	float dotRes = FVector::DotProduct(vel, curTargetLoc-curPos);
+	FVector TargetVel = curTargetLoc - curPos;
+	float dotRes = FVector::DotProduct(vel, TargetVel) / TargetVel.Size();
 	FVector crossRes = FVector::CrossProduct( curTargetLoc - curPos , vel);
 	float checkRight = FVector::DotProduct(Me->GetActorUpVector(),crossRes);
 	// 어텍박스 활성화
@@ -209,78 +223,127 @@ void UCGiantBeetleFSM::ChargeState()
 	}*/
 	//Me->SetActorRelativeRotation(newRot);
 	Me->SetActorLocation(curPos + Me->GetActorForwardVector() * ChargeSpeed * GetWorld()->DeltaTimeSeconds);
-
+	UE_LOG(LogTemp,Warning,TEXT("%f"),dotRes);
 	// 위치에 도달하면
-	if (dotRes < -10)
+	if (dotRes < -0.5)
 	{
+		Me->SetActorLocation(curPos);
+		Anim->bChargeEnd = true;
 		// 박치기를 실패하면 스톰프
-		if (!Me->bKill) Stomp();
-		mState = EBeetleState::Idle;
-		Target = nullptr;
-		ChargeCnt++;
-		Me->AttackBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		Me->bKill = false;
+		ChargeCurtime += GetWorld()->DeltaTimeSeconds;
+		if (!Me->bKill) 
+		{
+			Anim->IsKill = false;
+			//4.3
+			if(ChargeCurtime >= ChargeStompTime)
+			{
+				mState = EBeetleState::Idle;
+				Anim->AnimState = mState;
+				Target = nullptr;
+				ChargeCnt++;
+				Me->AttackBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+				Me->bKill = false;
+				Anim->IsKill = false;
+				Anim->bChargeEnd = false;
+				ChargeCurtime = 0.0;
+			}
+		}
+		else 
+		{
+			Anim->IsKill = true;
+			// 1.22
+			if(ChargeCurtime >= ChargeAttackTime)
+			{
+				mState = EBeetleState::Idle;
+				Anim->AnimState = mState;
+				Target = nullptr;
+				ChargeCnt++;
+				Me->AttackBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+				Me->bKill = false;
+				Anim->IsKill = false;
+				Anim->bChargeEnd = false;
+				ChargeCurtime = 0.0;
+			}
+		}
+		
 	}
 }
 
 void UCGiantBeetleFSM::JumpToTargetState()
 {
-	JumpCurTime += GetWorld()->DeltaTimeSeconds;
+	JumpAgroCurTime += GetWorld()->DeltaTimeSeconds;
+	if(JumpAgroCurTime > JumpAgroTime)
+	{
+		JumpCurTime += GetWorld()->DeltaTimeSeconds;
 
-	float t = JumpCurTime /JumpTotTime;
-	if (t >= 1)
-	{
-		Me->SetActorLocation(TargetLoc);
-		Stomp();
-		bWasTriple = false;
-		ChargeCnt = 0;
-		mState = EBeetleState::Idle;
-		Target = nullptr;
-		JumpCurTime = 0;
-	}
-	else
-	{
-		FVector newLoc = JumpStartloc;
-		newLoc += JumpVelocity * JumpCurTime;
-		newLoc.Z +=  JumpVelocityZ * JumpCurTime - 0.5 * JumpGravity * JumpCurTime * JumpCurTime;
-		Me->SetActorLocation(newLoc);
+		float t = JumpCurTime /JumpTotTime;
+		if (t >= 1)
+		{
+			Anim->bJumpEnd = true;
+			JumpCurLandTime += GetWorld()->DeltaTimeSeconds;
+			Me->SetActorLocation(TargetLoc);
+			//Stomp();
+			if(JumpCurLandTime >= JumpLandTime)
+			{
+				bWasTriple = false;
+				ChargeCnt = 0;
+				mState = EBeetleState::Idle;
+				Anim->AnimState = mState;
+				Target = nullptr;
+				JumpCurTime = 0;
+				JumpAgroCurTime = 0;
+				Anim->bJumpEnd = false;
+				JumpCurLandTime = 0;
+			}
+		}
+		else
+		{
+			FVector newLoc = JumpStartloc;
+			newLoc += JumpVelocity * JumpCurTime;
+			newLoc.Z +=  JumpVelocityZ * JumpCurTime - 0.5 * JumpGravity * JumpCurTime * JumpCurTime + 150;
+			Me->SetActorLocation(newLoc);
+		}
 	}
 }
 
 void UCGiantBeetleFSM::TripleJumpState()
 {
-	CurTJTime += GetWorld()->DeltaTimeSeconds;
-	if (CurTJTime > TJTime)
+	TJumpAgroCurTime += GetWorld()->GetDeltaSeconds();
+	if (TJumpAgroCurTime > TJumpAgroTime)
 	{
-		Stomp();
-		TripleCnt ++;
-		CurTJTime = 0.0f;
-	}
+		CurTJTime += GetWorld()->DeltaTimeSeconds;
+		if (CurTJTime > TJTime)
+		{
+			//Stomp();
+			TripleCnt++;
+			CurTJTime = 0.0f;
+		}
 
-	if (TripleCnt == 3)
-	{
-		bWasTriple = true;
-		TripleCnt = 0; 
-		ChargeCnt = 0;
-		mState = EBeetleState::Idle;
-		Target = nullptr;
+		if (TripleCnt == 3)
+		{
+			bWasTriple = true;
+			TripleCnt = 0;
+			ChargeCnt = 0;
+			mState = EBeetleState::Idle;
+			TJumpAgroCurTime = 0;
+			Anim->AnimState = mState;
+			Target = nullptr;
+		}
 	}
 }
 
 void UCGiantBeetleFSM::DamagedState()
 {
-	
-	Me->SetActorLocation(Me->GetActorLocation());
 	CurDMGTime += GetWorld()->DeltaTimeSeconds;
 	
 	if (CurDMGTime > DamageDelayTime)
 	{
 		mState = EBeetleState::Idle;
+		Anim->AnimState = mState;
 		Target = nullptr;
 
 		CurDMGTime = 0.0f;
 
-		//Anim->AnimState = mState;
 		ChargeCnt = 0;
 	}
 }
@@ -319,16 +382,20 @@ void UCGiantBeetleFSM::MultiRPC_Stomp_Implementation()
 void UCGiantBeetleFSM::ServerRPC_OnDamage_Implementation(int32 damage)
 {
 	Me->CurHP -= damage;
-
+	Me->AttackBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	bWasDamaged = true;
 	if (Me->CurHP > 0)
 	{
+		Anim->PlayDamagedMontage();
 		mState = EBeetleState::Damaged;
-
 	}
 	else
 	{
+		Anim->PlayDieMontage();
 		mState = EBeetleState::Die;
 	}
+	ai->StopMovement();
+	Anim->AnimState = mState;
 }
 
 void UCGiantBeetleFSM::MultiRPC_ONDamage_Implementation(int32 damage)
