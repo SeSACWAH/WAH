@@ -544,6 +544,7 @@ void ACPlayer::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
     //DOREPLIFETIME(ACPlayer, );
+    DOREPLIFETIME(ACPlayer, bIsCody);
     DOREPLIFETIME(ACPlayer, HP);
     DOREPLIFETIME(ACPlayer, bCanDash);
     DOREPLIFETIME(ACPlayer, bCanResetDash);
