@@ -18,6 +18,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Engine/Engine.h"
 #include "../../../../../../../Source/Runtime/Engine/Classes/Components/SceneCaptureComponent2D.h"
+#include "UI/CBattleUI.h"
 
 ACPlayer::ACPlayer()
 {
@@ -173,6 +174,7 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 void ACPlayer::PossessedBy(AController* NewController)
 {
     Super::PossessedBy(NewController);
+    InItBattleWidget();
 }
 
 void ACPlayer::OnRep_HP(int32 InDamage)
@@ -212,6 +214,7 @@ void ACPlayer::OnDamaged(int32 InDamage)
 {
     if (bIsGodMode || bIsDead) return;
     ServerRPC_SetHP(InDamage);
+    ServerRPC_UpdateUIHP();
 }
 
 void ACPlayer::OnDead()
@@ -435,9 +438,24 @@ void ACPlayer::InitCrosshairWidgets()
 {
 }
 
+void ACPlayer::ServerRPC_UpdateUIHP_Implementation()
+{
+    MulticastRPC_UpdateUIHP();
+}
+
+void ACPlayer::MulticastRPC_UpdateUIHP_Implementation()
+{
+    BattleUI->UpdateMPCPlayerHP(bIsCody, HP, MaxHP);
+}
+
 void ACPlayer::InItBattleWidget()
 {
-
+    if (BattleWidget && BattleUI == nullptr)
+    {
+        BattleUI = Cast<UCBattleUI>(CreateWidget(GetWorld(), BattleWidget));
+        BattleUI->SetVisibility(ESlateVisibility::Visible);
+        BattleUI->AddToViewport();
+    }
 }
 
 void ACPlayer::SetUnlockedCrosshairVisibility(bool bVisible)

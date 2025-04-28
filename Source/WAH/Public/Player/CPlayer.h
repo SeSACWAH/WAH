@@ -29,9 +29,27 @@ protected:
     FTimerHandle DamageTimer;
     FTimerHandle RecoverTimer;
 
+    UPROPERTY(Replicated)
+    bool bIsCody = false;
+
     int32 MaxHP = 12;
     UPROPERTY(ReplicatedUsing = OnRep_HP)
     int32 HP = MaxHP;
+
+    UPROPERTY(EditAnywhere, Category = UI)
+    TSubclassOf<class UCBattleUI> BattleWidget;
+
+    UPROPERTY()
+	class UCBattleUI* BattleUI;
+
+    UFUNCTION(Server, Reliable)
+    void ServerRPC_UpdateUIHP();
+
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastRPC_UpdateUIHP();
+
+    virtual void InItBattleWidget();
+
 
     UPROPERTY(Replicated)
     bool bIsDamaged = false;
@@ -294,8 +312,6 @@ protected:
     FVector FireDestination = FVector::ZeroVector;
 
     virtual void InitCrosshairWidgets();
-
-    virtual void InItBattleWidget();
 
     virtual void SetUnlockedCrosshairVisibility(bool bVisible);
     virtual void SetLockedCrosshairVisibility(bool bVisible);

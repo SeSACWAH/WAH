@@ -15,7 +15,7 @@ protected:
 public:
 	// 원본 머티리얼 인스턴스
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ProgressBar|Cody")
-	class UMaterialInterface* ProgressMaterialMay;  
+	class UMaterialInterface* ProgressMaterialCody;  
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ProgressBar|May")
 	class UMaterialInterface* ProgressMaterialMay;  
 
