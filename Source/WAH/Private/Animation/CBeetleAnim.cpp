@@ -3,6 +3,7 @@
 
 #include "Animation/CBeetleAnim.h"
 #include "enemy/CGiantBeetle.h"
+#include "Net/UnrealNetwork.h"
 
 void UCBeetleAnim::AnimNotify_Stomp()
 {
@@ -21,4 +22,14 @@ void UCBeetleAnim::PlayDamagedMontage()
 void UCBeetleAnim::PlayDieMontage()
 {
 	Montage_Play(DieAnim);
+}
+
+void UCBeetleAnim::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UCBeetleAnim, AnimState);
+	//DOREPLIFETIME(UCBeetleAnim, IsKill);
+	//DOREPLIFETIME(UCBeetleAnim, bChargeEnd);
+	//DOREPLIFETIME(UCBeetleAnim, bJumpEnd);
 }

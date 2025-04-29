@@ -36,7 +36,7 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = FSM)
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category = FSM)
 	EBeetleState mState = EBeetleState::Idle;
 
 	UPROPERTY(VisibleAnywhere, Category = FSM, Replicated)
@@ -56,6 +56,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = FSM)
 	float IdleDelayTime = 1.0f;
 
+	UPROPERTY(Replicated)
 	float CurIdleTime = 0.0f;
 
 	UPROPERTY(EditAnywhere, Category = FSM)
@@ -97,6 +98,7 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = Jump)
 	float JumpGravity = 980;
+
 
 	float JumpVelocityZ = 0;
 
@@ -157,7 +159,31 @@ public:
 	void ServerRPC_OnDamage(int32 damage);
 
 	UFUNCTION(NetMulticast, Unreliable)
-	void MultiRPC_ONDamage( int32 damage);
+	void MultiRPC_OnDamage( int32 damage);
+
+	UFUNCTION(Server, Unreliable)
+	void ServerRPC_ChangeAnimState( EBeetleState state);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MultiRPC_ChangeAnimState(EBeetleState state);
+
+	UFUNCTION(Server, Unreliable)
+	void ServerRPC_SetIsKill(bool bRight);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MultiRPC_SetIsKill(bool bRight);
+
+	UFUNCTION(Server, Unreliable)
+	void ServerRPC_SetbChargeEnd(bool bRight);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MultiRPC_SetbChargeEnd(bool bRight);
+	
+	UFUNCTION(Server, Unreliable)
+	void ServerRPC_SetbJumpEnd(bool bRight);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MultiRPC_SetbJumpEnd(bool bRight);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

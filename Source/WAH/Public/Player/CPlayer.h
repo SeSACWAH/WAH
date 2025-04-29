@@ -42,11 +42,6 @@ protected:
     UPROPERTY()
 	class UCBattleUI* BattleUI;
 
-    UFUNCTION(Server, Reliable)
-    void ServerRPC_UpdateUIHP();
-
-    UFUNCTION(NetMulticast, Reliable)
-    void MulticastRPC_UpdateUIHP();
 
     virtual void InItBattleWidget();
 

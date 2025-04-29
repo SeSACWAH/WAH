@@ -32,8 +32,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (BindWidget))
 	class UCButtonWidget* btn_findSession;
 
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (BindWidget))
-	//class UButton* btn_findSession;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (BindWidget))
+	class UCButtonWidget* btn_back;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (BindWidget))
+	class UCButtonWidget* btn_back2;
 
 	UPROPERTY()
 	class UCHHGameInstance* gi;

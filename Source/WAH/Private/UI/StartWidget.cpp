@@ -14,6 +14,9 @@ void UStartWidget::NativeConstruct()
 
 	btn_gameStart->OnClickedDelegate.BindUFunction(this, FName("SwitchCreatePanel"));
 	btn_findRoom->OnClickedDelegate.BindUFunction(this, FName("SwitchFindPanel"));
+	btn_back->OnClickedDelegate.BindUFunction(this, FName("BackToMain"));
+	btn_back2->OnClickedDelegate.BindUFunction(this, FName("BackToMain"));
+
 }
 
 void UStartWidget::CreateRoom()

@@ -85,7 +85,7 @@ void UCGiantBeetleFSM::IdleState()
 			}
 		}
 		mState = EBeetleState::Retarget;
-		Anim->AnimState = mState;
+		ServerRPC_ChangeAnimState(mState);
 		CurIdleTime = 0.0f;
 		CurRotTime = 0.0f;
 	}
@@ -131,7 +131,7 @@ void UCGiantBeetleFSM::RetargetState()
 			//JumpVelocityZ = JumpTotTime * JumpGravity / 2;
 			//mState = EBeetleState::TripleJump;
 			mState = EBeetleState::Charge;
-			Anim->AnimState = mState;
+			ServerRPC_ChangeAnimState(mState);
 			CurRotTime = 0.0f;
 			return;
 		}
@@ -140,7 +140,7 @@ void UCGiantBeetleFSM::RetargetState()
 			if (!bWasDamaged && ChargeCnt < MaxChargeCnt)
 			{
 				mState = EBeetleState::Charge;
-				Anim->AnimState = mState;
+				ServerRPC_ChangeAnimState(mState);
 			}
 			else
 			{
@@ -155,12 +155,12 @@ void UCGiantBeetleFSM::RetargetState()
 					JumpTotTime = jumpDir.Length() / JumpSpeed;
 					JumpVelocityZ = JumpTotTime * JumpGravity / 2;
 					mState = EBeetleState::JumpToTarget;
-					Anim->AnimState = mState;
+					ServerRPC_ChangeAnimState(mState);
 				}
 				else
 				{
 					mState = EBeetleState::TripleJump;
-					Anim->AnimState = mState;
+					ServerRPC_ChangeAnimState(mState);
 				}
 				bWasDamaged = false;
 			}
@@ -175,7 +175,7 @@ void UCGiantBeetleFSM::ChargeState()
 	if(Target->GetIsDead()) 
 	{
 		mState = EBeetleState::Idle;
-		Anim->AnimState = mState;
+		ServerRPC_ChangeAnimState(mState);
 		Target = nullptr;
 		return;
 	}
@@ -228,40 +228,40 @@ void UCGiantBeetleFSM::ChargeState()
 	if (dotRes < -0.5)
 	{
 		Me->SetActorLocation(curPos);
-		Anim->bChargeEnd = true;
+		ServerRPC_SetbChargeEnd(true);
 		// 박치기를 실패하면 스톰프
 		ChargeCurtime += GetWorld()->DeltaTimeSeconds;
 		if (!Me->bKill) 
 		{
-			Anim->IsKill = false;
+			MultiRPC_SetIsKill(false);
 			//4.3
 			if(ChargeCurtime >= ChargeStompTime)
 			{
 				mState = EBeetleState::Idle;
-				Anim->AnimState = mState;
+				ServerRPC_ChangeAnimState(mState);
 				Target = nullptr;
 				ChargeCnt++;
 				Me->AttackBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 				Me->bKill = false;
-				Anim->IsKill = false;
-				Anim->bChargeEnd = false;
+				MultiRPC_SetIsKill(false);
+				ServerRPC_SetbChargeEnd(false);
 				ChargeCurtime = 0.0;
 			}
 		}
 		else 
 		{
-			Anim->IsKill = true;
+			MultiRPC_SetIsKill(true);
 			// 1.22
 			if(ChargeCurtime >= ChargeAttackTime)
 			{
 				mState = EBeetleState::Idle;
-				Anim->AnimState = mState;
+				ServerRPC_ChangeAnimState(mState);
 				Target = nullptr;
 				ChargeCnt++;
 				Me->AttackBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 				Me->bKill = false;
-				Anim->IsKill = false;
-				Anim->bChargeEnd = false;
+				MultiRPC_SetIsKill(false);
+				ServerRPC_SetbChargeEnd(false);
 				ChargeCurtime = 0.0;
 			}
 		}
@@ -279,7 +279,7 @@ void UCGiantBeetleFSM::JumpToTargetState()
 		float t = JumpCurTime /JumpTotTime;
 		if (t >= 1)
 		{
-			Anim->bJumpEnd = true;
+			ServerRPC_SetbJumpEnd(true);
 			JumpCurLandTime += GetWorld()->DeltaTimeSeconds;
 			Me->SetActorLocation(TargetLoc);
 			//Stomp();
@@ -288,11 +288,11 @@ void UCGiantBeetleFSM::JumpToTargetState()
 				bWasTriple = false;
 				ChargeCnt = 0;
 				mState = EBeetleState::Idle;
-				Anim->AnimState = mState;
+				ServerRPC_ChangeAnimState(mState);
 				Target = nullptr;
 				JumpCurTime = 0;
 				JumpAgroCurTime = 0;
-				Anim->bJumpEnd = false;
+				ServerRPC_SetbJumpEnd(false);
 				JumpCurLandTime = 0;
 			}
 		}
@@ -326,7 +326,7 @@ void UCGiantBeetleFSM::TripleJumpState()
 			ChargeCnt = 0;
 			mState = EBeetleState::Idle;
 			TJumpAgroCurTime = 0;
-			Anim->AnimState = mState;
+			ServerRPC_ChangeAnimState(mState);
 			Target = nullptr;
 		}
 	}
@@ -339,7 +339,7 @@ void UCGiantBeetleFSM::DamagedState()
 	if (CurDMGTime > DamageDelayTime)
 	{
 		mState = EBeetleState::Idle;
-		Anim->AnimState = mState;
+		ServerRPC_ChangeAnimState(mState);
 		Target = nullptr;
 
 		CurDMGTime = 0.0f;
@@ -381,6 +381,12 @@ void UCGiantBeetleFSM::MultiRPC_Stomp_Implementation()
 
 void UCGiantBeetleFSM::ServerRPC_OnDamage_Implementation(int32 damage)
 {
+	MultiRPC_OnDamage(damage);
+	ai->StopMovement();
+}
+
+void UCGiantBeetleFSM::MultiRPC_OnDamage_Implementation(int32 damage)
+{
 	Me->CurHP -= damage;
 	Me->AttackBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	bWasDamaged = true;
@@ -394,13 +400,48 @@ void UCGiantBeetleFSM::ServerRPC_OnDamage_Implementation(int32 damage)
 		Anim->PlayDieMontage();
 		mState = EBeetleState::Die;
 	}
-	ai->StopMovement();
-	Anim->AnimState = mState;
+	
+	ServerRPC_ChangeAnimState(mState);
 }
 
-void UCGiantBeetleFSM::MultiRPC_ONDamage_Implementation(int32 damage)
+void UCGiantBeetleFSM::ServerRPC_ChangeAnimState_Implementation(EBeetleState state)
 {
-	
+	MultiRPC_ChangeAnimState(state);
+}
+
+void UCGiantBeetleFSM::MultiRPC_ChangeAnimState_Implementation(EBeetleState state)
+{
+	Anim->AnimState = state;
+}
+
+void UCGiantBeetleFSM::ServerRPC_SetIsKill_Implementation(bool bRight)
+{
+	MultiRPC_SetIsKill(bRight);
+}
+
+void UCGiantBeetleFSM::MultiRPC_SetIsKill_Implementation(bool bRight)
+{
+	Anim->IsKill = bRight;
+}
+
+void UCGiantBeetleFSM::ServerRPC_SetbChargeEnd_Implementation(bool bRight)
+{
+	MultiRPC_SetbChargeEnd(bRight);
+}
+
+void UCGiantBeetleFSM::MultiRPC_SetbChargeEnd_Implementation(bool bRight)
+{
+	Anim->bChargeEnd = bRight;
+}
+
+void UCGiantBeetleFSM::ServerRPC_SetbJumpEnd_Implementation(bool bRight)
+{
+	MultiRPC_SetbJumpEnd(bRight);
+}
+
+void UCGiantBeetleFSM::MultiRPC_SetbJumpEnd_Implementation(bool bRight)
+{
+	Anim->bJumpEnd = bRight;
 }
 
 void UCGiantBeetleFSM::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -410,6 +451,8 @@ void UCGiantBeetleFSM::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(UCGiantBeetleFSM, Target);
 	DOREPLIFETIME(UCGiantBeetleFSM, MaxChargeCnt);
 	DOREPLIFETIME(UCGiantBeetleFSM, HP);
+	DOREPLIFETIME(UCGiantBeetleFSM, mState);
+	DOREPLIFETIME(UCGiantBeetleFSM, CurIdleTime);
 
 }
 

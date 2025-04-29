@@ -34,11 +34,11 @@ public:
 
 	void UpdateMPCPlayerHP(bool bIsCody, float InCurHP, float InMaxHP);
 
-	UFUNCTION(Server, Reliable)
-	void ServerRPC_UpdateMPCPlayerHP(class UMaterialParameterCollection* InMPC, bool bIsCody, float InCurHP, float InMaxHP);
+	//UFUNCTION(Server, Reliable)
+	//void ServerRPC_UpdateMPCPlayerHP(class UMaterialParameterCollection* InMPC, bool bIsCody, float InCurHP, float InMaxHP);
 
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastRPC_UpdateMPCPlayerHP(class UMaterialParameterCollection* InMPC, bool bIsCody, float InCurHP, float InMaxHP);
+	//UFUNCTION(NetMulticast, Reliable)
+	//void MulticastRPC_UpdateMPCPlayerHP(class UMaterialParameterCollection* InMPC, bool bIsCody, float InCurHP, float InMaxHP);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 };
