@@ -244,8 +244,9 @@ void ACPlayer::OnDamaged(int32 InDamage)
         return;
     }
 
-    ServerRPC_OnDamaged(InDamage);
-   /* HP -= InDamage;
+    //ServerRPC_OnDamaged(InDamage);
+
+    HP -= InDamage;
     OnRep_HP();
 
     auto lambdaOut = [&]() {
@@ -268,7 +269,7 @@ void ACPlayer::OnDamaged(int32 InDamage)
             };
         GetWorld()->GetTimerManager().SetTimer(RecoverTimer, lambda, RecoverTime, true);
         };
-    GetWorld()->GetTimerManager().SetTimer(DamageTimer, lambdaOut, DamageDurationTime, false);*/
+    GetWorld()->GetTimerManager().SetTimer(DamageTimer, lambdaOut, DamageDurationTime, false);
 }
 
 void ACPlayer::OnDead()
