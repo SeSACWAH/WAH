@@ -38,6 +38,22 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (BindWidget))
 	class UCButtonWidget* btn_back2;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (BindWidget))
+	class UScrollBox* scroll_roomList;
+		
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (BindWidget))
+	//class UButton* btn_findSession;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class USessionSlotWidget> SeessionInfoWidget;
+	
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class UCChoosePlayerUI> ChoosePlayerUI;
+
+	UFUNCTION()
+	void AddSlotWidget(const struct FHSessionInfo& InSessionInfo);
+
+
 	UPROPERTY()
 	class UCHHGameInstance* gi;
 
@@ -53,4 +69,7 @@ public:
 	void SwitchFindPanel();
 	UFUNCTION()
 	void BackToMain();
+
+	UFUNCTION()
+	void OnClickedFindSession();
 };

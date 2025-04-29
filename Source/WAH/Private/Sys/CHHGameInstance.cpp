@@ -17,6 +17,10 @@ void UCHHGameInstance::Init()
 
 		SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this,&UCHHGameInstance::OnCreateSessionComplete);
 		SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this,&UCHHGameInstance::OnFindSessionsComplete);
+		SessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this,&UCHHGameInstance::OnJoinSessionComplete);
+
+		mySessionName.Append(FString::Printf(TEXT("_%d_%d"), FMath::Rand32(), FDateTime::Now().GetMillisecond()));
+
 	}
 }
 
@@ -51,11 +55,16 @@ void UCHHGameInstance::CreateMySession(FString roomName)
 
 void UCHHGameInstance::OnCreateSessionComplete(FName sessionName, bool bWasSuccessful)
 {
-
+	if(bWasSuccessful)
+	{
+		GetWorld()->ServerTravel(TEXT("/Game/Common/Maps/SelectMap?listen"));
+	}
 }
 
 void UCHHGameInstance::FindOtherSession()
 {
+	onSearchState.Broadcast(true);
+
 	sessionSearch = MakeShareable(new FOnlineSessionSearch());
 
 	sessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
@@ -69,7 +78,11 @@ void UCHHGameInstance::FindOtherSession()
 
 void UCHHGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 {
-	if(!bWasSuccessful) return;
+	if(!bWasSuccessful) 
+	{
+		onSearchState.Broadcast(false);
+		return;
+	}
 
 	auto results = sessionSearch->SearchResults;
 
@@ -86,5 +99,34 @@ void UCHHGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 		
 		sr.Session.SessionSettings.Get(FName("HOST_NAME"), sessionInfo.hostName);
 		
+		onSearchCompleted.Broadcast(sessionInfo);
 	}
+
 }
+
+void UCHHGameInstance::JoinSelectedSession(int32 index)
+{
+	auto sr = sessionSearch->SearchResults;
+
+	sr[index].Session.SessionSettings.bUseLobbiesIfAvailable = true;
+	sr[index].Session.SessionSettings.bUsesPresence = true;
+	SessionInterface->JoinSession(0, FName(mySessionName), sr[index]);
+}
+
+void UCHHGameInstance::OnJoinSessionComplete(FName sessionName, EOnJoinSessionCompleteResult::Type result)
+{
+	if (result == EOnJoinSessionCompleteResult::Success)
+	{
+		auto pc = GetWorld()->GetFirstPlayerController();
+
+		FString url;
+		SessionInterface->GetResolvedConnectString(sessionName, url);
+
+		if (!url.IsEmpty())
+		{
+			pc->ClientTravel(url, ETravelType::TRAVEL_Absolute);
+		}
+	}
+
+}
+

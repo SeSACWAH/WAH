@@ -16,9 +16,9 @@ class WAH_API UCChoosePlayerUI : public UUserWidget
 
 public:
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
-	class UButton* Btn_Cody;
+	class UButton* btn_Cody;
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
-	class UButton* Btn_May;
+	class UButton* btn_May;
 
 protected:
 	virtual void NativeConstruct() override;
