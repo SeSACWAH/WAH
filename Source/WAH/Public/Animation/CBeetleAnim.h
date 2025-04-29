@@ -16,10 +16,10 @@ class WAH_API UCBeetleAnim : public UAnimInstance
 	GENERATED_BODY()
 	
 public:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = FSM)
+	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadOnly, Category = FSM)
 	EBeetleState AnimState;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = FSM)
-	bool IsKill;
+	bool IsKill = false;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = FSM)
 	bool bChargeEnd = false;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = FSM)
@@ -34,4 +34,6 @@ public:
 
 	void PlayDamagedMontage();
 	void PlayDieMontage();
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

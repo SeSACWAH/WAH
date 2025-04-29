@@ -189,9 +189,13 @@ void ACPlayer::OnRep_HP()
 {
     GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, FString::Printf(TEXT("[DAMAGED] Player Get DAMAGED : %d"), HP));
 
-    auto pc = Cast<AWPlayerController>(Controller);
-    if(pc) BattleUI->UpdateMPCPlayerHP(bIsCody, HP, MaxHP);
-
+    if(IsLocallyControlled() && BattleUI) BattleUI->UpdateMPCPlayerHP(bIsCody, HP, MaxHP);
+    else
+    {
+        auto player = Cast<ACPlayer>(GetWorld()->GetFirstPlayerController()->GetPawn());
+        player->BattleUI->UpdateMPCPlayerHP(bIsCody,HP,MaxHP);
+    }
+    
     bIsDamaged = true;
     if (HP <= 0)
     {
@@ -249,27 +253,27 @@ void ACPlayer::OnDamaged(int32 InDamage)
     HP -= InDamage;
     OnRep_HP();
 
-    auto lambdaOut = [&]() {
-        GetWorld()->GetTimerManager().ClearTimer(DamageTimer);
+	auto lambdaOut = [&]() {
+		GetWorld()->GetTimerManager().ClearTimer(DamageTimer);
 
-        auto lambda = [&]() {
-            GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, TEXT("[DAMAGED] TIMER END @@@@@@@@@@@@@@"));
-            if (HP < MaxHP)
-            {
-                GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, FString::Printf(TEXT("[DAMAGED] Current HP : %d"), HP));
-                HP++;
-                OnRep_HP();
-            }
-            else
-            {
-                GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, FString::Printf(TEXT("[DAMAGED] HP RECOVERED !!!: %d"), HP));
-                bIsDamaged = false;
-                GetWorld()->GetTimerManager().ClearTimer(RecoverTimer);
-            }
-            };
-        GetWorld()->GetTimerManager().SetTimer(RecoverTimer, lambda, RecoverTime, true);
-        };
-    GetWorld()->GetTimerManager().SetTimer(DamageTimer, lambdaOut, DamageDurationTime, false);
+		auto lambda = [&]() {
+			GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, TEXT("[DAMAGED] TIMER END @@@@@@@@@@@@@@"));
+			if (HP < MaxHP)
+			{
+				GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, FString::Printf(TEXT("[DAMAGED] Current HP : %d"), HP));
+				HP++;
+				OnRep_HP();
+			}
+			else
+			{
+				GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, FString::Printf(TEXT("[DAMAGED] HP RECOVERED !!!: %d"), HP));
+				bIsDamaged = false;
+				GetWorld()->GetTimerManager().ClearTimer(RecoverTimer);
+			}
+			};
+		GetWorld()->GetTimerManager().SetTimer(RecoverTimer, lambda, RecoverTime, true);
+		};
+	GetWorld()->GetTimerManager().SetTimer(DamageTimer, lambdaOut, DamageDurationTime, false);
 }
 
 void ACPlayer::OnDead()
@@ -487,18 +491,6 @@ void ACPlayer::InitCrosshairWidgets()
 {
 }
 
-void ACPlayer::ServerRPC_UpdateUIHP_Implementation()
-{
-    MulticastRPC_UpdateUIHP();
-}
-
-void ACPlayer::MulticastRPC_UpdateUIHP_Implementation()
-{
-    UE_LOG(LogTemp, Warning, TEXT("bIsCody : %d"), bIsCody);
-
-    BattleUI->UpdateMPCPlayerHP(bIsCody, HP, MaxHP);
-}
-
 void ACPlayer::InItBattleWidget()
 {
     if (BattleWidget && BattleUI == nullptr)
@@ -599,12 +591,14 @@ void ACPlayer::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 void ACPlayer::TestDamage(const FInputActionValue& InValue)
 {
     UE_LOG(LogTemp, Warning, TEXT("[DAMAGE TEST] DAMAGED!!! Current HP : %d"), HP);
-    OnDamaged(6);
+    ServerRPC_OnDamaged(6);
+    //OnDamaged(6);
 }
 
 void ACPlayer::TestRevival(const FInputActionValue& InValue)
 {
     UE_LOG(LogTemp, Warning, TEXT("[REVIVAL TEST] DEAD!!! Current HP : %d"), HP);
-    OnDamaged(12);
+    ServerRPC_OnDamaged(12);
+    //OnDamaged(12);
 }
 #pragma endregion

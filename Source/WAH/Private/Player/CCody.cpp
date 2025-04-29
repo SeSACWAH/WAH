@@ -22,12 +22,12 @@ ACCody::ACCody()
 	//SpawnPoint = FVector(-100, -100, 0);
 	//SpawnRotation = FRotator(0, -180, 0);
 	//SetActorLocationAndRotation(SpawnPoint, SpawnRotation);
-	bIsCody = true;
 }
 
 void ACCody::BeginPlay()
 {
 	Super::BeginPlay();
+	bIsCody = true;
 	if (HasAuthority())
 	{
 		Gun = GetWorld()->SpawnActor<ACGun>(GunBP);
