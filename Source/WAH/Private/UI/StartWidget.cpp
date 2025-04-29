@@ -12,12 +12,8 @@ void UStartWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if(!gi || edit_roomName->GetText().IsEmpty()) return;
-	
-	//gi->CreateMySession(edit_roomName->GetText().ToString());
-	
-	btn_gameStart->OnClicked.AddDynamic(this, &UStartWidget::SwitchCreatePanel);
-	btn_findRoom->OnClicked.AddDynamic(this, &UStartWidget::SwitchFindPanel);
+	btn_gameStart->OnClickedDelegate.BindUFunction(this, FName("SwitchCreatePanel"));
+	btn_findRoom->OnClickedDelegate.BindUFunction(this, FName("SwitchFindPanel"));
 }
 
 void UStartWidget::CreateRoom()

@@ -4,7 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Delegates/DelegateCombinations.h"
 #include "CButtonWidget.generated.h"
+
+DECLARE_DELEGATE(FBtnClicked);
 
 /**
  * 
@@ -17,6 +20,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (BindWidget))
 	class UButton* btn;
 
+	FBtnClicked OnClickedDelegate;
 
+	virtual void NativeConstruct() override;
+
+	UFUNCTION()
 	void OnClicked();
 };

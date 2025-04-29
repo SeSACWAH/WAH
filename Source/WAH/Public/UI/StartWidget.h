@@ -43,7 +43,11 @@ public:
 	UFUNCTION()
 	void CreateRoom();
 
+
+	UFUNCTION()
 	void SwitchCreatePanel();
+	UFUNCTION()
 	void SwitchFindPanel();
+	UFUNCTION()
 	void BackToMain();
 };
