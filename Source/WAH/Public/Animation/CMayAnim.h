@@ -38,6 +38,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AnimSettings)
 	bool bCanAim = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AnimSettings)
+	float pitchAngle;
+
 	UPROPERTY(EditAnywhere, Category = Dash)
 	class UAnimMontage* DashMontage;
 

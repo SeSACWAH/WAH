@@ -26,17 +26,7 @@ void UCMayAnim::NativeUpdateAnimation(float InDeltaSeconds)
         bIsFalling = May->bIsFalling;
         JumpCurrentCount = May->PlayerJumpCurrentCount;
 
-        if (JumpCurrentCount >= 1)
-        {
-            if (May->HasAuthority())
-            {
-                UE_LOG(LogTemp, Warning, TEXT("SERVER : %d / %d"), bIsFalling, JumpCurrentCount);
-            }
-            else
-            {
-                UE_LOG(LogTemp, Error, TEXT("CLIENT : %d / %d"), bIsFalling, JumpCurrentCount);
-            }
-        }
+        pitchAngle = May->GetBaseAimRotation().GetNormalized().Pitch;
     }
 }
 
