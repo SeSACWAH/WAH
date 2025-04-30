@@ -41,6 +41,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (BindWidget))
 	class UScrollBox* scroll_roomList;
 		
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (BindWidget))
+	class UButton* btn_Cody;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (BindWidget))
+	class UButton* btn_May;
+
 	//UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (BindWidget))
 	//class UButton* btn_findSession;
 
@@ -72,4 +78,9 @@ public:
 
 	UFUNCTION()
 	void OnClickedFindSession();
+
+	UFUNCTION()
+	void OnClickedCody();
+	UFUNCTION()
+	void OnClickedMay();
 };

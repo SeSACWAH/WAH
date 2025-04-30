@@ -25,6 +25,8 @@ void UStartWidget::NativeConstruct()
 	btn_back->OnClickedDelegate.BindUFunction(this, FName("BackToMain"));
 	btn_back2->OnClickedDelegate.BindUFunction(this, FName("BackToMain"));
 	btn_createRoom->OnClickedDelegate.BindUFunction(this, FName("CreateRoom"));
+	btn_Cody->OnClicked.AddDynamic(this, &UStartWidget::OnClickedCody);
+	btn_May->OnClicked.AddDynamic(this, &UStartWidget::OnClickedMay);
 }
 
 void UStartWidget::CreateRoom()
@@ -58,6 +60,16 @@ void UStartWidget::OnClickedFindSession()
 	{
 		gi->FindOtherSession();
 	}
+}
+
+void UStartWidget::OnClickedCody()
+{
+	gi->bTypeCody = true;
+}
+
+void UStartWidget::OnClickedMay()
+{
+	gi->bTypeCody = false;
 }
 
 void UStartWidget::AddSlotWidget(const struct FHSessionInfo& InSessionInfo)

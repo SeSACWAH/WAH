@@ -57,7 +57,7 @@ void UCHHGameInstance::OnCreateSessionComplete(FName sessionName, bool bWasSucce
 {
 	if(bWasSuccessful)
 	{
-		GetWorld()->ServerTravel(TEXT("/Game/Common/Maps/SelectMap?listen"));
+		GetWorld()->ServerTravel(TEXT("/Game/Common/Maps/BattleMap?listen"));
 	}
 }
 

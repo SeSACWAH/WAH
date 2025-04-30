@@ -17,18 +17,30 @@ class WAH_API UCharacterSelectWidget : public UUserWidget
 public:
 	UPROPERTY()
 	class UCHHGameInstance* gi;
+	UPROPERTY()
+	class ACHHPlayerController* controller;
 
 	virtual void NativeConstruct() override;
 
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	class UButton* btn_Cody;
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
-	class UButton* btn_May;
+	class UButton* btn_May;	
+	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	class UTextBlock* playerC;
+	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	class UTextBlock* playerM;
 
 	UFUNCTION()
 	void OnClickedCody();
+	
 	UFUNCTION()
 	void OnClickedMay();
+
+	UFUNCTION()
+	void updateCody(bool selected, FString playerName);
+	UFUNCTION()
+	void updateMay(bool selected, FString playerName);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bSelectCody = false;
