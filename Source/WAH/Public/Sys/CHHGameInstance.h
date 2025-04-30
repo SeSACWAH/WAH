@@ -21,6 +21,10 @@ struct FHSessionInfo
 
 };
 
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSearchSignature, const FHSessionInfo&, sessionInfo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSearchStateSignature, bool, bIsSearching);
+
 /**
  * 
  */
@@ -47,4 +51,14 @@ public:
 	void FindOtherSession();
 
 	void OnFindSessionsComplete(bool bWasSuccessful);
+
+	FSearchSignature onSearchCompleted;
+
+	FSearchStateSignature onSearchState;
+
+	void JoinSelectedSession(int32 index);
+
+	void OnJoinSessionComplete(FName sessionName, EOnJoinSessionCompleteResult::Type result);
+
+	bool bTypeCody;
 };

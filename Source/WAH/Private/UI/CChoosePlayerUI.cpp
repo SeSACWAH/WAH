@@ -11,8 +11,8 @@ void UCChoosePlayerUI::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    Btn_Cody->OnClicked.AddDynamic(this, &UCChoosePlayerUI::OnButtonCodyClicked);
-    Btn_May->OnClicked.AddDynamic(this, &UCChoosePlayerUI::OnButtonMayClicked);
+    btn_Cody->OnClicked.AddDynamic(this, &UCChoosePlayerUI::OnButtonCodyClicked);
+    btn_May->OnClicked.AddDynamic(this, &UCChoosePlayerUI::OnButtonMayClicked);
 }
 
 void UCChoosePlayerUI::OnButtonCodyClicked()
