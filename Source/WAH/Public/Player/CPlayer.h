@@ -42,10 +42,12 @@ protected:
     UPROPERTY()
 	class UCBattleUI* BattleUI;
 
-
     virtual void InItBattleWidget();
+public:
+    class UCBattleUI* GetBattleUI(){ return BattleUI; }
 
 
+protected:
     UPROPERTY(Replicated)
     bool bIsDamaged = false;
     UPROPERTY(Replicated)

@@ -21,7 +21,7 @@ ACMay::ACMay()
     if(tmpMesh.Succeeded()) GetMesh()->SetSkeletalMesh(tmpMesh.Object);
 
     // Spawn Point
-    SpawnPoint = FVector(-100,-100, 0);
+    SpawnPoint = FVector(-900,-900, 180);
     SpawnRotation = FRotator(0, 0, 0);
 }
 

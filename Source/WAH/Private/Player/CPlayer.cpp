@@ -326,6 +326,7 @@ void ACPlayer::MulticastRPC_Dead_Implementation()
 
     GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, TEXT("[DEAD] Player DEAD!!!!!"));
     GetMesh()->SetVisibility(false);
+    GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     SetActorLocation(GetActorLocation() + -GetActorUpVector() * 100);
 
     // 죽음 FX의 Visibility를 켠다
@@ -348,6 +349,7 @@ void ACPlayer::MulticastRPC_Revive_Implementation()
     GEngine->AddOnScreenDebugMessage(1, 2, FColor::Red, FString::Printf(TEXT("[REVIVAL] Player REVIVE Complete - %f / %f"), DebugReviveTime, RevivalTime));
 
     GetMesh()->SetVisibility(true);
+    GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
     //등장 FX Visible 켜기
 

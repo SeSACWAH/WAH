@@ -19,9 +19,8 @@ ACCody::ACCody()
 	ConstructorHelpers::FClassFinder<ACSapGun> tempGun(TEXT("/Script/Engine.Blueprint'/Game/KHH/Blueprints/BP_SapGun.BP_SapGun_C'"));
 	if (tempGun.Succeeded()) GunBP = tempGun.Class;
 	
-	//SpawnPoint = FVector(-100, -100, 0);
-	//SpawnRotation = FRotator(0, -180, 0);
-	//SetActorLocationAndRotation(SpawnPoint, SpawnRotation);
+	SpawnPoint = FVector(-900, 900, 180);
+	SpawnRotation = FRotator(0, 0, 0);
 }
 
 void ACCody::BeginPlay()
