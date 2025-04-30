@@ -85,20 +85,6 @@ protected:
 #pragma endregion
 
 #pragma region Status
- //   UPROPERTY(EditAnywhere, Category = UI)
- //   TSubclassOf<class UCBattleUI> BattleWidget;
-
- //   UPROPERTY()
-	//class UCBattleUI* BattleUI;
-
- //   virtual void InItBattleWidget();
-
- //   UFUNCTION(Server, Reliable)
- //   void ServerRPC_UpdateUIHP();
-
- //   UFUNCTION(NetMulticast, Reliable)
- //   void MulticastRPC_UpdateUIHP();
-
     virtual void OnDamaged(int32 InDamage) override;
 
     virtual void OnDead() override;

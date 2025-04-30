@@ -14,6 +14,7 @@
 #include "EngineUtils.h"
 #include "Animation/CbeetleAnim.h"
 #include "AIController.h"
+#include "UI/CBattleUI.h"
 
 
 
@@ -381,15 +382,32 @@ void UCGiantBeetleFSM::MultiRPC_Stomp_Implementation()
 
 void UCGiantBeetleFSM::ServerRPC_OnDamage_Implementation(int32 damage)
 {
+	Me->CurHP -= damage;
 	MultiRPC_OnDamage(damage);
 	ai->StopMovement();
 }
 
 void UCGiantBeetleFSM::MultiRPC_OnDamage_Implementation(int32 damage)
 {
-	Me->CurHP -= damage;
 	Me->AttackBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	bWasDamaged = true;
+
+	// 모든 Player UI에 HP 반영 ////////////
+	float percent = Me->CurHP / Me->MaxHP;
+
+	TArray<AActor*> foundActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACPlayer::StaticClass(), foundActors);
+
+	for (AActor* actor : foundActors)
+	{
+		ACPlayer* player = Cast<ACPlayer>(actor);
+		if (player && player->GetBattleUI())
+		{
+			player->GetBattleUI()->HPBeetle = percent;
+		}
+	}
+	///////////////////////////////////////
+
 	if (Me->CurHP > 0)
 	{
 		Anim->PlayDamagedMontage();
