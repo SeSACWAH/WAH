@@ -44,8 +44,8 @@ public:
 	virtual void FireBullet(FVector InDestination) override;
 	UFUNCTION(Server, Reliable)
 	void ServerRPC_FireBullet(FVector InDestination);
-	//UFUNCTION(NetMulticast, Reliable)
-	//void MulticastRPC_FireBullet(ACMatchBullet* InBullet, FVector InDestination, FVector InFirePosition);
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastRPC_PlayEffects(FVector InFirePosition);
 
 	virtual void PostNetInit() override;
 

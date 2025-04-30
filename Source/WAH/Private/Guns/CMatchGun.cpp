@@ -6,6 +6,7 @@
 #include "Guns/CMatchBullet.h"
 #include "Player/CMay.h"
 #include "../../../../../../../Source/Runtime/Engine/Public/Net/UnrealNetwork.h"
+#include "../../../../../../../Source/Runtime/Engine/Classes/Kismet/GameplayStatics.h"
 
 ACMatchGun::ACMatchGun()
 {
@@ -15,16 +16,14 @@ ACMatchGun::ACMatchGun()
 
     ConstructorHelpers::FObjectFinder<USkeletalMesh> tmpMesh(TEXT("/Script/Engine.SkeletalMesh'/Game/Net/Match/MatchSniper.MatchSniper'"));
     if (tmpMesh.Succeeded()) GunMeshComp->SetSkeletalMesh(tmpMesh.Object);
+
+	// Sounds
+
 }
 
 void ACMatchGun::BeginPlay()
 {
     Super::BeginPlay();
-	
-	//if (HasAuthority())
-	//{
-	//	InitializeBulletPool();
-	//}
 }
 
 void ACMatchGun::Tick(float DeltaTime)
@@ -74,45 +73,6 @@ FVector ACMatchGun::GetFirePosition()
 void ACMatchGun::FireBullet(FVector InDestination)
 {
 	ServerRPC_FireBullet(InDestination);
-	//bool bIsFound = false;
-
-	//FVector firePosition = GunMeshComp->GetSocketLocation(TEXT("FirePosition"));
-
-	//UE_LOG(LogTemp, Error, TEXT(">>>>> Fire Pos : %s / InDes : %s<<<<<"), *firePosition.ToString(), *InDestination.ToString());
-
-	//for (auto bullet : BulletPool)
-	//{
-	//	// 비활성화 된 총알이라면
-	//	if (!bullet->GetBulletMesh()->GetVisibleFlag())
-	//	{
-	//		// 활성화하고 총구 위치에 배치한다
-	//		bIsFound = true;
-
-	//		bullet->ActivateBullet(true);
-	//		//firePosition.SetScale3D(bullet->GetBulletComp()->GetComponentScale());
-	//		bullet->SetActorLocation(firePosition);
-	//		bullet->SetFireDestination(InDestination);
-	//		bullet->SetCanMove(true);
-
-	//		// 소리를 재생한다
-	//		// UGameplayStatics::PlaySoundAtLocation(GetWorld(), FireSound, firePosition.GetLocation());
-
-	//		// FX를 재생한다
-	//		// PlayFireFX();
-
-	//		//UE_LOG(LogTemp, Warning, TEXT("--------------SPAWN BULLET--------------"));
-	//		// 반복을 그만한다
-	//		break;
-	//	}
-	//}
-
-	//// 사용 가능한 총알이 없다면 추가로 만들고 스폰한다
-	//if (!bIsFound)
-	//{
-	//	//UE_LOG(LogTemp, Warning, TEXT("--------------Couldn't find BULLET--------------"));
-	//	AddBulletToPool(false);
-	//	FireBullet(InDestination);
-	//}
 }
 
 void ACMatchGun::ServerRPC_FireBullet_Implementation(FVector InDestination)
@@ -133,20 +93,14 @@ void ACMatchGun::ServerRPC_FireBullet_Implementation(FVector InDestination)
 			bIsFound = true;
 
 			FoundBullet = bullet;
-			//MulticastRPC_FireBullet(FoundBullet, InDestination, firePosition);
 			bullet->ActivateBullet(true);
 			bullet->SetActorLocation(firePosition);
 			bullet->SetFireDestination(InDestination);
 			bullet->SetCanMove(true);
 
-			// 소리를 재생한다
-			// UGameplayStatics::PlaySoundAtLocation(GetWorld(), FireSound, firePosition.GetLocation());
+			// 사운드, fx 재생
+			MulticastRPC_PlayEffects(firePosition);
 
-			// FX를 재생한다
-			// PlayFireFX();
-
-			//UE_LOG(LogTemp, Warning, TEXT("--------------SPAWN BULLET--------------"));
-			
 			//반복을 그만한다
 			break;
 		}
@@ -161,22 +115,14 @@ void ACMatchGun::ServerRPC_FireBullet_Implementation(FVector InDestination)
 	}
 }
 
-//void ACMatchGun::MulticastRPC_FireBullet_Implementation(ACMatchBullet* InBullet, FVector InDestination, FVector InFirePosition)
-//{
-//	FoundBullet = InBullet;
-//	FoundBullet->ActivateBullet(true);
-//	FoundBullet->SetActorLocation(InFirePosition);
-//	FoundBullet->SetFireDestination(InDestination);
-//	FoundBullet->SetCanMove(true);
-//
-//	// 소리를 재생한다
-//	// UGameplayStatics::PlaySoundAtLocation(GetWorld(), FireSound, firePosition.GetLocation());
-//
-//	// FX를 재생한다
-//	// PlayFireFX();
-//
-//	//UE_LOG(LogTemp, Warning, TEXT("--------------SPAWN BULLET--------------"));
-//}
+void ACMatchGun::MulticastRPC_PlayEffects_Implementation(FVector InFirePosition)
+{
+	//소리를 재생한다
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), FireSound, InFirePosition);
+
+	// FX를 재생한다
+	// PlayFireFX();
+}
 
 void ACMatchGun::PostNetInit()
 {
